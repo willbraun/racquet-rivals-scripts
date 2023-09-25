@@ -19,11 +19,14 @@ func main() {
 	})
 
 	c.OnResponse(func(r *colly.Response) {
-		fmt.Println("Visited", r.Request.URL)
+		fmt.Println("Response code:", r.StatusCode)
 	})
 
-	c.OnHTML("tr td:nth-of-type(1)", func(e *colly.HTMLElement) {
-		fmt.Println("First column of a table row:", e.Text)
+	// get HTML from URL
+	// format HTML into struct
+	
+	c.OnHTML(".scores-draw-table > tbody > tr > td[rowspan='1']", func(e *colly.HTMLElement) {
+		fmt.Println(e.Text)
 	})
 
 	c.OnScraped(func(r *colly.Response) {
@@ -31,6 +34,11 @@ func main() {
 	})
 
 	c.Visit("https://www.atptour.com/en/scores/current/chengdu/7581/draws")
+	
+	
+	// get current slots from pb, script_user
+	// filter struct to remove positions already in pb
+	// loop over remaining struct to upload to pb
 
 	fmt.Println("Finished with script")
 }
