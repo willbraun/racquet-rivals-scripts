@@ -53,7 +53,7 @@ func main() {
 					fmt.Println(err)
 				}
 
-				entry := slot{draw_id: "1", round: 1, position: positionInt, player_name: name, seed: seed }
+				entry := slot{draw_id: "1", round: 1, position: positionInt, player_name: name, seed: seed}
 				slots = append(slots, entry)
 			})
 
