@@ -41,6 +41,7 @@ func main() {
 	c.OnHTML(".scores-draw-entry-box", func(e *colly.HTMLElement) {
 		table := e.DOM.ChildrenMatcher(goquery.Single(".scores-draw-entry-box-table"))
 		if table.Length() > 0 {
+			// round 1
 			rows := table.ChildrenMatcher(goquery.Single("tbody")).Children()
 			rows.Each(func(i int, row *goquery.Selection) {
 				values := row.Children().Map(func(i int, s *goquery.Selection) string {
@@ -56,9 +57,8 @@ func main() {
 				entry := slot{draw_id: "1", round: 1, position: positionInt, player_name: name, seed: seed}
 				slots = append(slots, entry)
 			})
-
 		} else {
-			// add the single player in the other rounds
+			// other rounds
 		}
 
 	})
