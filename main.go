@@ -17,6 +17,8 @@ type slot struct {
 	seed        string
 }
 
+type slotSlice []slot
+
 func main() {
 	fmt.Println("Started")
 	c := colly.NewCollector()
@@ -33,10 +35,10 @@ func main() {
 		fmt.Println("Response code:", r.StatusCode)
 	})
 
-	// get HTML from URL
-	// format HTML into struct
-
-	slots := []slot{}
+	slots := slotSlice{}
+	seeds := make(map[string]string)
+	currentRound := 2
+	positions := make(map[int]int)
 
 	c.OnHTML(".scores-draw-entry-box", func(e *colly.HTMLElement) {
 		table := e.DOM.ChildrenMatcher(goquery.Single(".scores-draw-entry-box-table"))
@@ -47,29 +49,40 @@ func main() {
 				values := row.Children().Map(func(i int, s *goquery.Selection) string {
 					return trim(s.Text())
 				})
-				position, seed, name := values[0], values[1], values[2]
-				positionInt, err := strconv.Atoi(position)
-
+				positionStr, seed, name := values[0], values[1], values[2]
+				
+				position, err := strconv.Atoi(positionStr)
 				if err != nil {
 					fmt.Println(err)
 				}
 
-				entry := slot{draw_id: "1", round: 1, position: positionInt, player_name: name, seed: seed}
-				slots = append(slots, entry)
+				slots.add(slot{draw_id: "1", round: 1, position: position, player_name: name, seed: seed})
+				
+				seeds[name] = seed
+				currentRound = 2
 			})
 		} else {
 			// other rounds
-		}
+			round := currentRound
+			positions[round]++
+			position := positions[round]
+			name := trim(e.DOM.ChildrenMatcher(goquery.Single(".scores-draw-entry-box-players-item")).Text())
+			seed := seeds[name]
 
+			slots.add(slot{draw_id: "1", round: round, position: position, player_name: name, seed: seed})
+
+			currentRound++
+		}
 	})
 
 	c.OnScraped(func(r *colly.Response) {
 		fmt.Println("Finished scraping", r.Request.URL)
 	})
 
-	c.Visit("https://www.atptour.com/en/scores/current/chengdu/7581/draws")
+	c.Visit("https://www.atptour.com/en/scores/current/beijing/747/draws")
 
 	fmt.Println(slots)
+
 	// get current slots from pb, script_user
 	// filter struct to remove positions already in pb
 	// loop over remaining struct to upload to pb
@@ -77,4 +90,8 @@ func main() {
 
 func trim(s string) string {
 	return strings.Trim(s, " \n\r")
+}
+
+func (ss *slotSlice) add(s slot) {
+	*ss = append(*ss, s)
 }
