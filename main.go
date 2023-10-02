@@ -26,9 +26,12 @@ func main() {
 		fmt.Println("Error loading .env file")
 	}
 
-	token := Login()
+	token := login()
 	draws := getDraws(token)
 	testDraw := draws[0]
+	currentSlots := getSlots(testDraw.ID, token)
+	fmt.Println(len(currentSlots))
+	fmt.Println(currentSlots[0])
 
 	c := colly.NewCollector()
 
@@ -44,7 +47,7 @@ func main() {
 		fmt.Println("Response code:", r.StatusCode)
 	})
 
-	slots := slotSlice{}
+	scrapedSlots := slotSlice{}
 	seeds := make(map[string]string)
 	currentRound := 2
 	positions := make(map[int]int)
@@ -65,7 +68,7 @@ func main() {
 					fmt.Println(err)
 				}
 
-				slots.add(Slot{Draw_id: testDraw.ID, Round: 1, Position: position, Name: name, Seed: seed})
+				scrapedSlots.add(Slot{Draw_id: testDraw.ID, Round: 1, Position: position, Name: name, Seed: seed})
 
 				seeds[name] = seed
 				currentRound = 2
@@ -78,7 +81,7 @@ func main() {
 			name := trim(e.DOM.ChildrenMatcher(goquery.Single(".scores-draw-entry-box-players-item")).Text())
 			seed := seeds[name]
 
-			slots.add(Slot{Draw_id: testDraw.ID, Round: round, Position: position, Name: name, Seed: seed})
+			scrapedSlots.add(Slot{Draw_id: testDraw.ID, Round: round, Position: position, Name: name, Seed: seed})
 
 			currentRound++
 		}
@@ -88,13 +91,12 @@ func main() {
 		fmt.Println("Finished scraping", r.Request.URL)
 	})
 
-	fmt.Println("Start scraping")
-	c.Visit(testDraw.Url)
+	// fmt.Println("Start scraping")
+	// c.Visit(testDraw.Url)
 
 	// filter struct to remove positions already in pb
-	// loop over remaining struct to upload to pb
 
-	postSlots(slots, token)
+	// postSlots(scrapedSlots, token)
 }
 
 func trim(s string) string {

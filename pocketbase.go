@@ -11,15 +11,12 @@ import (
 
 type UserRecord struct {
 	ID              string `json:"id"`
-	CollectionID    string `json:"collectionId"`
-	CollectionName  string `json:"collectionName"`
 	Created         string `json:"created"`
 	Updated         string `json:"updated"`
 	Username        string `json:"username"`
 	Email           string `json:"email"`
 	Verified        bool   `json:"verified"`
 	EmailVisibility bool   `json:"emailVisibility"`
-	SomeCustomField string `json:"someCustomField"`
 }
 
 type UserAuthRes struct {
@@ -46,6 +43,23 @@ type DrawRes struct {
 	Items      []DrawRecord `json:"items"`
 }
 
+type SlotRecord struct {
+	ID       string `json:"id"`
+	DrawID   string `json:"draw_id"`
+	Round    int    `json:"round"`
+	Position int    `json:"position"`
+	Name     string `json:"name"`
+	Seed     string `json:"seed"`
+}
+
+type SlotRes struct {
+	Page       int          `json:"page"`
+	PerPage    int          `json:"perPage"`
+	TotalPages int          `json:"totalPages"`
+	TotalItems int          `json:"totalItems"`
+	Items      []SlotRecord `json:"items"`
+}
+
 type CreateSlotReq struct {
 	Draw_id  string `json:"draw_id"`
 	Round    int    `json:"round"`
@@ -56,10 +70,6 @@ type CreateSlotReq struct {
 
 type CreateSlotRes struct {
 	ID             string `json:"id"`
-	CollectionID   string `json:"collectionId"`
-	CollectionName string `json:"collectionName"`
-	Created        string `json:"created"`
-	Updated        string `json:"updated"`
 	DrawID         string `json:"draw_id"`
 	Name           string `json:"name"`
 	Seed           int    `json:"seed"`
@@ -88,7 +98,7 @@ func makeHTTPRequest(method, url, token string, requestData interface{}) (*http.
 	return client.Do(req)
 }
 
-func Login() string {
+func login() string {
 	url := "https://tennisbracket.willbraun.dev/api/collections/user/auth-with-password"
 
 	requestData := struct {
@@ -134,6 +144,25 @@ func getDraws(token string) []DrawRecord {
 	}
 
 	return drawRes.Items
+}
+
+func getSlots(drawId string, token string) []SlotRecord {
+	url := fmt.Sprintf(`https://tennisbracket.willbraun.dev/api/collections/draw_slot/records?perPage=255&filter=(draw_id="%s")&skipTotal=true`, drawId)
+
+	res, err := makeHTTPRequest("GET", url, token, nil)
+	if err != nil {
+		fmt.Println(err)
+	}
+	defer res.Body.Close()
+
+	slotRes := &SlotRes{}
+	derr := json.NewDecoder(res.Body).Decode(slotRes)
+	if derr != nil {
+		fmt.Println(derr)
+		return nil
+	}
+
+	return slotRes.Items
 }
 
 func postSlots(slots slotSlice, token string) {
