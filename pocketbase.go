@@ -60,8 +60,8 @@ type SlotRes struct {
 	Items      []SlotRecord `json:"items"`
 }
 
-type CreateSlotReq struct {
-	Draw_id  string `json:"draw_id"`
+type CreateUpdateSlotReq struct {
+	DrawID   string `json:"draw_id"`
 	Round    int    `json:"round"`
 	Position int    `json:"position"`
 	Name     string `json:"name"`
@@ -69,12 +69,12 @@ type CreateSlotReq struct {
 }
 
 type CreateSlotRes struct {
-	ID             string `json:"id"`
-	DrawID         string `json:"draw_id"`
-	Name           string `json:"name"`
-	Seed           int    `json:"seed"`
-	Round          int    `json:"round"`
-	Position       int    `json:"position"`
+	ID       string `json:"id"`
+	DrawID   string `json:"draw_id"`
+	Name     string `json:"name"`
+	Seed     int    `json:"seed"`
+	Round    int    `json:"round"`
+	Position int    `json:"position"`
 }
 
 func makeHTTPRequest(method, url, token string, requestData interface{}) (*http.Response, error) {
@@ -166,17 +166,45 @@ func getSlots(drawId string, token string) []SlotRecord {
 }
 
 func postSlots(slots slotSlice, token string) {
+	if len(slots) == 0 {
+		return
+	}
+
 	url := "https://tennisbracket.willbraun.dev/api/collections/draw_slot/records"
 
 	for _, v := range slots {
-		requestData := CreateSlotReq{
-			Draw_id:  v.Draw_id,
+		requestData := CreateUpdateSlotReq{
+			DrawID:   v.DrawID,
 			Round:    v.Round,
 			Position: v.Position,
 			Name:     v.Name,
 			Seed:     v.Seed,
 		}
 		res, err := makeHTTPRequest("POST", url, token, requestData)
+		if err != nil {
+			fmt.Println(err)
+		}
+		defer res.Body.Close()
+
+		fmt.Println(res.Status, v)
+	}
+}
+
+func updateSlots(slots slotSlice, token string) {
+	if len(slots) == 0 {
+		return
+	}
+
+	for _, v := range slots {
+		url := fmt.Sprintf(`https://tennisbracket.willbraun.dev/api/collections/draw_slot/records/"%s"`, v.ID)
+		requestData := CreateUpdateSlotReq{
+			DrawID:   v.DrawID,
+			Round:    v.Round,
+			Position: v.Position,
+			Name:     v.Name,
+			Seed:     v.Seed,
+		}
+		res, err := makeHTTPRequest("PATCH", url, token, requestData)
 		if err != nil {
 			fmt.Println(err)
 		}
