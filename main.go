@@ -48,42 +48,45 @@ func main() {
 
 	scrapedSlots := slotSlice{}
 	seeds := make(map[string]string)
+
+	// first round
+	c.OnHTML(".scores-draw-entry-box-table", func(e *colly.HTMLElement) {
+		rows := e.DOM.ChildrenMatcher(goquery.Single("tbody")).Children()
+		rows.Each(func(i int, row *goquery.Selection) {
+			values := row.Children().Map(func(i int, s *goquery.Selection) string {
+				return trim(s.Text())
+			})
+			positionStr, seed, name := values[0], values[1], values[2]
+
+			position, err := strconv.Atoi(positionStr)
+			if err != nil {
+				fmt.Println(err)
+			}
+
+			scrapedSlots.add(Slot{DrawID: testDraw.ID, Round: 1, Position: position, Name: name, Seed: seed})
+
+			seeds[name] = seed
+		})
+	})
+
 	currentRound := 2
 	positions := make(map[int]int)
 
-	c.OnHTML(".scores-draw-entry-box", func(e *colly.HTMLElement) {
-		table := e.DOM.ChildrenMatcher(goquery.Single(".scores-draw-entry-box-table"))
-		if table.Length() > 0 {
-			// round 1
-			rows := table.ChildrenMatcher(goquery.Single("tbody")).Children()
-			rows.Each(func(i int, row *goquery.Selection) {
-				values := row.Children().Map(func(i int, s *goquery.Selection) string {
-					return trim(s.Text())
-				})
-				positionStr, seed, name := values[0], values[1], values[2]
-
-				position, err := strconv.Atoi(positionStr)
-				if err != nil {
-					fmt.Println(err)
-				}
-
-				scrapedSlots.add(Slot{DrawID: testDraw.ID, Round: 1, Position: position, Name: name, Seed: seed})
-
-				seeds[name] = seed
-				currentRound = 2
-			})
-		} else {
-			// other rounds
-			round := currentRound
-			positions[round]++
-			position := positions[round]
-			name := trim(e.DOM.ChildrenMatcher(goquery.Single(".scores-draw-entry-box-players-item")).Text())
-			seed := seeds[name]
-
-			scrapedSlots.add(Slot{DrawID: testDraw.ID, Round: round, Position: position, Name: name, Seed: seed})
-
-			currentRound++
+	// other rounds
+	c.OnHTML(".scores-draw-entry-box-wrapper", func(e *colly.HTMLElement) {
+		rowspan, _ := e.DOM.Parent().Attr("rowspan")
+		if rowspan == "1" {
+			currentRound = 2
 		}
+
+		positions[currentRound]++
+		position := positions[currentRound]
+		name := trim(e.DOM.Children().ChildrenMatcher(goquery.Single(".scores-draw-entry-box-players-item")).Text())
+		seed := seeds[name]
+
+		scrapedSlots.add(Slot{DrawID: testDraw.ID, Round: currentRound, Position: position, Name: name, Seed: seed})
+
+		currentRound++
 	})
 
 	c.OnScraped(func(r *colly.Response) {
@@ -93,15 +96,11 @@ func main() {
 	fmt.Println("Start scraping")
 	c.Visit(testDraw.Url)
 
-	// load initial draw, should only happen once at beginning
 	newSlots := getNewSlots(scrapedSlots, currentSlots)
 	postSlots(newSlots, token)
 
-	// filter scrapedSlots to remove the currentSlots WITH NAME
-	// take the remaining slots (without names), update name and seed, send update back to pb
-	updatedSlots := prepareUpdates(scrapedSlots, currentSlots)
+	updatedSlots := prepareUpdates(scrapedSlots, currentSlots, seeds)
 	updateSlots(updatedSlots, token)
-	fmt.Println(updatedSlots)
 }
 
 func trim(s string) string {
@@ -130,13 +129,13 @@ func toSlotSlice(s []SlotRecord) slotSlice {
 func getNewSlots(scraped slotSlice, current slotSlice) slotSlice {
 	currentMap := make(map[string]bool)
 	for _, v := range current {
-		key := getSlotKey(v.Round, v.Position)
+		key := getSlotKey(v)
 		currentMap[key] = true
 	}
 
 	result := slotSlice{}
 	for _, v := range scraped {
-		key := getSlotKey(v.Round, v.Position)
+		key := getSlotKey(v)
 		if !currentMap[key] {
 			result.add(v)
 		}
@@ -145,17 +144,21 @@ func getNewSlots(scraped slotSlice, current slotSlice) slotSlice {
 	return result
 }
 
-func prepareUpdates(scraped slotSlice, current slotSlice) slotSlice {
-	currentMap := make(map[string]string)
-	for _, v := range current {
-		key := getSlotKey(v.Round, v.Position)
-		currentMap[key] = v.Name
+func prepareUpdates(scraped slotSlice, current slotSlice, seeds map[string]string) slotSlice {
+	scrapedMap := make(map[string]string)
+	for _, v := range scraped {
+		key := getSlotKey(v)
+		scrapedMap[key] = v.Name
 	}
 
 	result := slotSlice{}
-	for _, v := range scraped {
-		key := getSlotKey(v.Round, v.Position)
-		if currentMap[key] != v.Name {
+	for _, v := range current {
+		key := getSlotKey(v)
+		newName := scrapedMap[key]
+		newSeed := seeds[newName]
+		if newName != v.Name || newSeed != v.Seed {
+			v.Name = newName
+			v.Seed = newSeed
 			result.add(v)
 		}
 	}
@@ -163,6 +166,6 @@ func prepareUpdates(scraped slotSlice, current slotSlice) slotSlice {
 	return result
 }
 
-func getSlotKey(r int, p int) string {
-	return fmt.Sprintf("%d.%d", r, p)
+func getSlotKey(s Slot) string {
+	return fmt.Sprintf("%d.%d", s.Round, s.Position)
 }

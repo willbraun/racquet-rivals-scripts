@@ -196,7 +196,7 @@ func updateSlots(slots slotSlice, token string) {
 	}
 
 	for _, v := range slots {
-		url := fmt.Sprintf(`https://tennisbracket.willbraun.dev/api/collections/draw_slot/records/"%s"`, v.ID)
+		url := fmt.Sprintf(`https://tennisbracket.willbraun.dev/api/collections/draw_slot/records/%s`, v.ID)
 		requestData := CreateUpdateSlotReq{
 			DrawID:   v.DrawID,
 			Round:    v.Round,
