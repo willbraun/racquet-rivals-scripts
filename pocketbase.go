@@ -99,7 +99,7 @@ func makeHTTPRequest(method, url, token string, requestData interface{}) (*http.
 }
 
 func login() string {
-	url := "https://tennisbracket.willbraun.dev/api/collections/user/auth-with-password"
+	url := fmt.Sprintf(`%s/api/collections/user/auth-with-password`, os.Getenv("BASE_URL"))
 
 	requestData := struct {
 		Identity string `json:"identity"`
@@ -128,7 +128,7 @@ func login() string {
 }
 
 func getDraws(token string) []DrawRecord {
-	url := "https://tennisbracket.willbraun.dev/api/collections/draw/records?fields=id,name,event,year,url,start_date,end_date,prediction_close"
+	url := fmt.Sprintf(`%s/api/collections/draw/records?fields=id,name,event,year,url,start_date,end_date,prediction_close`, os.Getenv("BASE_URL"))
 	res, err := makeHTTPRequest("GET", url, token, nil)
 	if err != nil {
 		fmt.Println(err)
@@ -147,7 +147,7 @@ func getDraws(token string) []DrawRecord {
 }
 
 func getSlots(drawId string, token string) []SlotRecord {
-	url := fmt.Sprintf(`https://tennisbracket.willbraun.dev/api/collections/draw_slot/records?perPage=255&filter=(draw_id="%s")&skipTotal=true`, drawId)
+	url := fmt.Sprintf(`%s/api/collections/draw_slot/records?perPage=255&filter=(draw_id="%s")&skipTotal=true`, os.Getenv("BASE_URL"), drawId)
 
 	res, err := makeHTTPRequest("GET", url, token, nil)
 	if err != nil {
@@ -170,15 +170,15 @@ func postSlots(slots slotSlice, token string) {
 		return
 	}
 
-	url := "https://tennisbracket.willbraun.dev/api/collections/draw_slot/records"
+	url := fmt.Sprintf(`%s/api/collections/draw_slot/records`, os.Getenv("BASE_URL"))
 
-	for _, v := range slots {
+	for _, slot := range slots {
 		requestData := CreateUpdateSlotReq{
-			DrawID:   v.DrawID,
-			Round:    v.Round,
-			Position: v.Position,
-			Name:     v.Name,
-			Seed:     v.Seed,
+			DrawID:   slot.DrawID,
+			Round:    slot.Round,
+			Position: slot.Position,
+			Name:     slot.Name,
+			Seed:     slot.Seed,
 		}
 		res, err := makeHTTPRequest("POST", url, token, requestData)
 		if err != nil {
@@ -186,7 +186,7 @@ func postSlots(slots slotSlice, token string) {
 		}
 		defer res.Body.Close()
 
-		fmt.Println(res.Status, v)
+		fmt.Println(res.Status, slot)
 	}
 }
 
@@ -195,14 +195,14 @@ func updateSlots(slots slotSlice, token string) {
 		return
 	}
 
-	for _, v := range slots {
-		url := fmt.Sprintf(`https://tennisbracket.willbraun.dev/api/collections/draw_slot/records/%s`, v.ID)
+	for _, slot := range slots {
+		url := fmt.Sprintf(`%s/api/collections/draw_slot/records/%s`, os.Getenv("BASE_URL"), slot.ID)
 		requestData := CreateUpdateSlotReq{
-			DrawID:   v.DrawID,
-			Round:    v.Round,
-			Position: v.Position,
-			Name:     v.Name,
-			Seed:     v.Seed,
+			DrawID:   slot.DrawID,
+			Round:    slot.Round,
+			Position: slot.Position,
+			Name:     slot.Name,
+			Seed:     slot.Seed,
 		}
 		res, err := makeHTTPRequest("PATCH", url, token, requestData)
 		if err != nil {
@@ -210,6 +210,6 @@ func updateSlots(slots slotSlice, token string) {
 		}
 		defer res.Body.Close()
 
-		fmt.Println(res.Status, v)
+		fmt.Println(res.Status, slot)
 	}
 }
