@@ -2,7 +2,6 @@ package main
 
 import (
 	"fmt"
-	"os"
 
 	"github.com/joho/godotenv"
 )
@@ -33,14 +32,11 @@ func main() {
 		var seeds map[string]string
 
 		if draw.Event == "Mens Singles" {
-			fmt.Println(draw)
 			scrapedSlots, seeds = scrapeATP(draw)
 		} else if draw.Event == "Womens Singles" {
-			fmt.Println(draw)
 			scrapedSlots, seeds = scrapeWTA(draw)
 		} else {
 			fmt.Println("Invalid event:", draw.Event)
-			os.Exit(1)
 		}
 
 		newSlots := getNewSlots(scrapedSlots, currentSlots)

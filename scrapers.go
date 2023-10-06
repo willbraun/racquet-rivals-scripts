@@ -29,8 +29,8 @@ func scrapeATP(draw DrawRecord) (slotSlice, map[string]string) {
 	// first round
 	c.OnHTML(".scores-draw-entry-box-table", func(e *colly.HTMLElement) {
 		rows := e.DOM.ChildrenMatcher(goquery.Single("tbody")).Children()
-		rows.Each(func(i int, row *goquery.Selection) {
-			values := row.Children().Map(func(i int, s *goquery.Selection) string {
+		rows.Each(func(_ int, row *goquery.Selection) {
+			values := row.Children().Map(func(_ int, s *goquery.Selection) string {
 				return trim(s.Text())
 			})
 			positionStr, seed, name := values[0], values[1], values[2]
@@ -67,7 +67,7 @@ func scrapeATP(draw DrawRecord) (slotSlice, map[string]string) {
 	})
 
 	c.OnScraped(func(r *colly.Response) {
-		fmt.Println("Finished scraping", r.Request.URL)
+		fmt.Println("Finished scraping")
 	})
 
 	fmt.Println("Start scraping")
@@ -94,17 +94,50 @@ func scrapeWTA(draw DrawRecord) (slotSlice, map[string]string) {
 		fmt.Println("Response code:", r.StatusCode)
 	})
 
-	c.OnHTML(".tournament-draw__round-container", func(e *colly.HTMLElement) {
-		fmt.Println(e.DOM.Attr("data-round"))
+	c.OnHTML(`.tournament-draw__tab[data-ui-tab="Singles"]`, func(e *colly.HTMLElement) {
+		round := 0
+
+		roundContainers := e.DOM.Find(".tournament-draw__round-container")
+		roundContainers.Each(func(_ int, rc *goquery.Selection) {
+			round++
+			position := 1
+
+			matches := rc.Find(".tournament-draw__match-table")
+			matches.Each(func(_ int, match *goquery.Selection) {
+				rows := match.ChildrenMatcher(goquery.Single("table")).ChildrenMatcher(goquery.Single("tbody")).Children()
+				rows.Each(func(_ int, row *goquery.Selection) {
+					name, seed := wtaExtractRow(row)
+
+					slots.add(Slot{DrawID: draw.ID, Round: round, Position: position, Name: name, Seed: seed})
+
+					seeds[name] = seed
+					position++
+				})
+			})
+		})
+
+		champion := roundContainers.Last().Find(".is-winner").Find(".match-table__player-name")
+		name, seed := wtaExtractRow(champion)
+		round++
+
+		slots.add(Slot{DrawID: draw.ID, Round: round, Position: 1, Name: name, Seed: seed})
 	})
 
 	c.OnScraped(func(r *colly.Response) {
-		fmt.Println("Finished scraping", r.Request.URL)
+		fmt.Println("Finished scraping")
 	})
 
 	fmt.Println("Start scraping")
 	c.Visit(draw.Url)
 
-	fmt.Println("Scraped WTA:", slots)
 	return slots, seeds
+}
+
+func wtaExtractRow(r *goquery.Selection) (string, string) {
+	firstInitial := trim(r.Find(".match-table__player-fname").Text())
+	lastName := trim(r.Find(".match-table__player-lname").Text())
+	name := fmt.Sprintf(`%s %s`, firstInitial, lastName)
+	seed := trim(r.Find(".match-table__player-seed").Text())
+
+	return name, seed
 }
