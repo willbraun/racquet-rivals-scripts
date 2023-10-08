@@ -117,7 +117,7 @@ func login() string {
 	defer res.Body.Close()
 
 	userAuthRes := &UserAuthRes{}
-	fmt.Println("auth request status:", res.Status)
+	fmt.Println("Auth request status:", res.Status)
 	derr := json.NewDecoder(res.Body).Decode(userAuthRes)
 	if derr != nil {
 		fmt.Println(err)
@@ -128,7 +128,9 @@ func login() string {
 }
 
 func getDraws(token string) []DrawRecord {
-	url := fmt.Sprintf(`%s/api/collections/draw/records?fields=id,name,event,year,url,start_date,end_date,prediction_close`, os.Getenv("BASE_URL"))
+	today := time.Now().UTC()
+	url := fmt.Sprintf(`%s/api/collections/draw/records?filter=(end_date>="%s")&fields=id,name,event,year,url,start_date,end_date,prediction_close`, os.Getenv("BASE_URL"), today)
+
 	res, err := makeHTTPRequest("GET", url, token, nil)
 	if err != nil {
 		fmt.Println(err)
@@ -186,7 +188,7 @@ func postSlots(slots slotSlice, token string) {
 		}
 		defer res.Body.Close()
 
-		fmt.Println(res.Status, slot)
+		fmt.Println(res.Status, "added", slot)
 	}
 }
 
@@ -210,6 +212,6 @@ func updateSlots(slots slotSlice, token string) {
 		}
 		defer res.Body.Close()
 
-		fmt.Println(res.Status, slot)
+		fmt.Println(res.Status, "updated", slot)
 	}
 }

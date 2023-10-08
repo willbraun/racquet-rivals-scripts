@@ -26,6 +26,11 @@ func main() {
 	token := login()
 	draws := getDraws(token)
 
+	if len(draws) == 0 {
+		fmt.Println("No active draws")
+		return
+	}
+
 	for _, draw := range draws {
 		currentSlots := toSlotSlice(getSlots(draw.ID, token))
 		var scrapedSlots slotSlice
