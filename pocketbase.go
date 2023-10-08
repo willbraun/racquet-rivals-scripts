@@ -128,7 +128,7 @@ func login() string {
 }
 
 func getDraws(token string) []DrawRecord {
-	today := time.Now().UTC()
+	today := time.Now().UTC().Format("2006-01-02")
 	url := fmt.Sprintf(`%s/api/collections/draw/records?filter=(end_date>="%s")&fields=id,name,event,year,url,start_date,end_date,prediction_close`, os.Getenv("BASE_URL"), today)
 
 	res, err := makeHTTPRequest("GET", url, token, nil)
