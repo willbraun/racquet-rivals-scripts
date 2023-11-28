@@ -136,7 +136,7 @@ func scrapeWTA(draw DrawRecord) (slotSlice, map[string]string) {
 func wtaExtractRow(r *goquery.Selection) (string, string) {
 	firstInitial := trim(r.Find(".match-table__player-fname").Text())
 	lastName := trim(r.Find(".match-table__player-lname").Text())
-	name := fmt.Sprintf(`%s %s`, firstInitial, lastName)
+	name := trim(fmt.Sprintf(`%s %s`, firstInitial, lastName))
 	seed := trim(r.Find(".match-table__player-seed").Text())
 
 	return name, seed
