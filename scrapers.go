@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 	"strconv"
+	"strings"
 
 	// "time"
 
@@ -226,11 +227,11 @@ func scrapeWTA(draw DrawRecord) (slotSlice, map[string]string) {
 		// winner := strings.Split(matches[len(matches)-1].ResultString, " d ")[0]
 		// fmt.Println(winner)
 
-		champion := roundContainers.Last().Find(".is-winner").Find(".match-table__player-name")
-		name, seed := wtaExtractRow(champion)
-		round++
+		// champion := roundContainers.Last().Find(".is-winner").Find(".match-table__player-name")
+		// name, seed := wtaExtractRow(champion)
+		// round++
 
-		slots.add(Slot{DrawID: draw.ID, Round: round, Position: 1, Name: name, Seed: seed})
+		// slots.add(Slot{DrawID: draw.ID, Round: round, Position: 1, Name: name, Seed: seed})
 	})
 
 	c.OnScraped(func(r *colly.Response) {
@@ -250,4 +251,52 @@ func wtaExtractRow(r *goquery.Selection) (string, string) {
 	seed := trim(r.Find(".match-table__player-seed").Text())
 
 	return name, seed
+}
+
+func scrapeWTAFinal(draw DrawRecord) (slotSlice, map[string]string) {
+	slots := slotSlice{}
+	seeds := make(map[string]string)
+	fmt.Println("hi")
+	hardcodedUrl := "https://www.wtatennis.com/tournament/1020/beijing/2023/scores"
+
+	c := colly.NewCollector()
+
+	c.OnRequest(func(r *colly.Request) {
+		fmt.Println("Visiting", r.URL)
+	})
+
+	c.OnError(func(_ *colly.Response, err error) {
+		fmt.Println("Something went wrong:", err)
+	})
+
+	c.OnResponse(func(r *colly.Response) {
+		fmt.Println("Response code:", r.StatusCode)
+	})
+
+	c.OnScraped(func(r *colly.Response) {
+		fmt.Println("Finished scraping")
+		text := string(r.Body)
+		uncommented := strings.ReplaceAll(strings.ReplaceAll(text, "<!--", ""), "-->", "")
+		reader := strings.NewReader(uncommented)
+
+		doc, err := goquery.NewDocumentFromReader(reader)
+		if err != nil {
+			fmt.Println(err)
+		}
+
+		completed := doc.Find(`.tournament-scores__tab[data-ui-tab="Singles"]`).Find(".tennis-match--completed")
+		completed.Each(func(_ int, match *goquery.Selection) {
+			roundLabel := trim(match.Find(".tennis-match__round").Text())
+			if roundLabel == "Final" {
+				name, seed := wtaExtractRow(match.Find(".match-table__team--winner"))
+				fmt.Println(seed, name)
+				// Remove print, define one slot to return. Accept draw, calculate URL based on ID and year, calculate round = Log2(draw.size) + 1
+			}
+		})
+	})
+
+	fmt.Println("Start scraping")
+	c.Visit(hardcodedUrl)
+
+	return slots, seeds
 }
