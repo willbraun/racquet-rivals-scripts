@@ -5,99 +5,9 @@ import (
 	"strconv"
 	"strings"
 
-	// "time"
-
 	"github.com/PuerkitoBio/goquery"
 	"github.com/gocolly/colly"
 )
-
-// type WTAMatchData struct {
-// 	BinPacketBase64   string    `json:"BinPacketBase64"`
-// 	CourtID           int       `json:"CourtID"`
-// 	DateSeq           int       `json:"DateSeq"`
-// 	DrawLevelType     string    `json:"DrawLevelType"`
-// 	DrawMatchType     string    `json:"DrawMatchType"`
-// 	EntryTypeA        string    `json:"EntryTypeA"`
-// 	EntryTypeB        string    `json:"EntryTypeB"`
-// 	EventID           string    `json:"EventID"`
-// 	EventYear         int       `json:"EventYear"`
-// 	LastUpdated       time.Time `json:"LastUpdated"`
-// 	MatchID           string    `json:"MatchID"`
-// 	MatchState        string    `json:"MatchState"`
-// 	MatchTimeStamp    time.Time `json:"MatchTimeStamp"`
-// 	MatchTimeTotal    string    `json:"MatchTimeTotal"`
-// 	Message           string    `json:"Message"`
-// 	NumSets           int       `json:"NumSets"`
-// 	PlayerCountryA    string    `json:"PlayerCountryA"`
-// 	PlayerCountryA2   string    `json:"PlayerCountryA2"`
-// 	PlayerCountryB    string    `json:"PlayerCountryB"`
-// 	PlayerCountryB2   string    `json:"PlayerCountryB2"`
-// 	PlayerIDA         string    `json:"PlayerIDA"`
-// 	PlayerIDA2        string    `json:"PlayerIDA2"`
-// 	PlayerIDB         string    `json:"PlayerIDB"`
-// 	PlayerIDB2        string    `json:"PlayerIDB2"`
-// 	PlayerNameFirstA  string    `json:"PlayerNameFirstA"`
-// 	PlayerNameFirstA2 string    `json:"PlayerNameFirstA2"`
-// 	PlayerNameFirstB  string    `json:"PlayerNameFirstB"`
-// 	PlayerNameFirstB2 string    `json:"PlayerNameFirstB2"`
-// 	PlayerNameLastA   string    `json:"PlayerNameLastA"`
-// 	PlayerNameLastA2  string    `json:"PlayerNameLastA2"`
-// 	PlayerNameLastB   string    `json:"PlayerNameLastB"`
-// 	PlayerNameLastB2  string    `json:"PlayerNameLastB2"`
-// 	PointA            string    `json:"PointA"`
-// 	PointB            string    `json:"PointB"`
-// 	ResultString      string    `json:"ResultString"`
-// 	RoundID           string    `json:"RoundID"`
-// 	ScoreSet1A        string    `json:"ScoreSet1A"`
-// 	ScoreSet1B        string    `json:"ScoreSet1B"`
-// 	ScoreSet2A        string    `json:"ScoreSet2A"`
-// 	ScoreSet2B        string    `json:"ScoreSet2B"`
-// 	ScoreSet3A        string    `json:"ScoreSet3A"`
-// 	ScoreSet3B        string    `json:"ScoreSet3B"`
-// 	ScoreSet4A        string    `json:"ScoreSet4A"`
-// 	ScoreSet4B        string    `json:"ScoreSet4B"`
-// 	ScoreSet5A        string    `json:"ScoreSet5A"`
-// 	ScoreSet5B        string    `json:"ScoreSet5B"`
-// 	ScoreString       string    `json:"ScoreString"`
-// 	ScoreSys          string    `json:"ScoreSys"`
-// 	ScoreTbSet1       string    `json:"ScoreTbSet1"`
-// 	ScoreTbSet2       string    `json:"ScoreTbSet2"`
-// 	ScoreTbSet3       string    `json:"ScoreTbSet3"`
-// 	ScoreTbSet4       string    `json:"ScoreTbSet4"`
-// 	SeedA             string    `json:"SeedA"`
-// 	SeedB             string    `json:"SeedB"`
-// 	Serve             string    `json:"Serve"`
-// 	Winner            string    `json:"Winner"`
-// }
-
-// type WTATournamentData struct {
-// 	TournamentGroup   WTATournamentGroupData `json:"tournamentGroup"`
-// 	Year              int             `json:"year"`
-// 	Title             string          `json:"title"`
-// 	StartDate         string          `json:"startDate"`
-// 	EndDate           string          `json:"endDate"`
-// 	Surface           string          `json:"surface"`
-// 	InOutdoor         string          `json:"inOutdoor"`
-// 	City              string          `json:"city"`
-// 	Country           string          `json:"country"`
-// 	SinglesDrawSize   int             `json:"singlesDrawSize"`
-// 	DoublesDrawSize   int             `json:"doublesDrawSize"`
-// 	PrizeMoney        int             `json:"prizeMoney"`
-// 	PrizeMoneyCurrency string          `json:"prizeMoneyCurrency"`
-// 	LiveScoringId     string          `json:"liveScoringId"`
-// }
-
-// type WTATournamentGroupData struct {
-// 	ID       int    `json:"id"`
-// 	Name     string `json:"name"`
-// 	Level    string `json:"level"`
-// 	Metadata interface{} `json:"metadata"`
-// }
-
-// type WTADataResponse struct {
-// 	Matches    []WTAMatchData `json:"matches"`
-// 	Tournament WTATournamentData     `json:"tournament"`
-// }
 
 func scrapeATP(draw DrawRecord) (slotSlice, map[string]string) {
 	slots := slotSlice{}
@@ -158,7 +68,7 @@ func scrapeATP(draw DrawRecord) (slotSlice, map[string]string) {
 	})
 
 	c.OnScraped(func(r *colly.Response) {
-		fmt.Println("Finished scraping")
+		fmt.Println("Finished scraping ATP")
 	})
 
 	fmt.Println("Start scraping")
@@ -170,9 +80,6 @@ func scrapeATP(draw DrawRecord) (slotSlice, map[string]string) {
 func scrapeWTA(draw DrawRecord) (slotSlice, map[string]string) {
 	slots := slotSlice{}
 	seeds := make(map[string]string)
-
-	// wtaDrawId := strings.Split(draw.Url, "/")[4]
-	// fmt.Println(wtaDrawId)
 
 	c := colly.NewCollector()
 
@@ -200,7 +107,7 @@ func scrapeWTA(draw DrawRecord) (slotSlice, map[string]string) {
 			matches.Each(func(_ int, match *goquery.Selection) {
 				rows := match.ChildrenMatcher(goquery.Single("table")).ChildrenMatcher(goquery.Single("tbody")).Children()
 				rows.Each(func(_ int, row *goquery.Selection) {
-					name, seed := wtaExtractRow(row)
+					name, seed := wtaExtractName(row)
 
 					slots.add(Slot{DrawID: draw.ID, Round: round, Position: position, Name: name, Seed: seed})
 
@@ -210,32 +117,13 @@ func scrapeWTA(draw DrawRecord) (slotSlice, map[string]string) {
 			})
 		})
 
-		// url := fmt.Sprintf(`https://api.wtatennis.com/tennis/tournaments/%s/2023/matches/?states=%s`, wtaDrawId, "L%2C%20C")
-		// fmt.Println(url)
-		// res, err := makeHTTPRequest("GET", url, "", nil)
-		// defer res.Body.Close()
-
-		// wtaDataResponse := &WTADataResponse{}
-		// fmt.Println("Auth request status:", res.Status)
-		// derr := json.NewDecoder(res.Body).Decode(wtaDataResponse)
-		// if derr != nil {
-		// 	fmt.Println(err)
-		// 	return
-		// }
-
-		// matches := wtaDataResponse.Matches
-		// winner := strings.Split(matches[len(matches)-1].ResultString, " d ")[0]
-		// fmt.Println(winner)
-
-		// champion := roundContainers.Last().Find(".is-winner").Find(".match-table__player-name")
-		// name, seed := wtaExtractRow(champion)
-		// round++
-
-		// slots.add(Slot{DrawID: draw.ID, Round: round, Position: 1, Name: name, Seed: seed})
+		round++
+		winnerName, winnerSeed := scrapeWTAFinal(draw)
+		slots.add(Slot{DrawID: draw.ID, Round: round, Position: 1, Name: winnerName, Seed: winnerSeed})
 	})
 
 	c.OnScraped(func(r *colly.Response) {
-		fmt.Println("Finished scraping")
+		fmt.Println("Finished scraping WTA")
 	})
 
 	fmt.Println("Start scraping")
@@ -244,20 +132,21 @@ func scrapeWTA(draw DrawRecord) (slotSlice, map[string]string) {
 	return slots, seeds
 }
 
-func wtaExtractRow(r *goquery.Selection) (string, string) {
-	firstInitial := trim(r.Find(".match-table__player-fname").Text())
-	lastName := trim(r.Find(".match-table__player-lname").Text())
+func wtaExtractName(x *goquery.Selection) (string, string) {
+	firstInitial := trim(x.Find(".match-table__player-fname").Text())
+	lastName := trim(x.Find(".match-table__player-lname").Text())
 	name := trim(fmt.Sprintf(`%s %s`, firstInitial, lastName))
-	seed := trim(r.Find(".match-table__player-seed").Text())
+	seed := trim(x.Find(".match-table__player-seed").Text())
 
 	return name, seed
 }
 
-func scrapeWTAFinal(draw DrawRecord) (slotSlice, map[string]string) {
-	slots := slotSlice{}
-	seeds := make(map[string]string)
-	fmt.Println("hi")
-	hardcodedUrl := "https://www.wtatennis.com/tournament/1020/beijing/2023/scores"
+func scrapeWTAFinal(draw DrawRecord) (string, string) {
+	name := ""
+	seed := ""
+
+	wtaDrawId := strings.Split(draw.Url, "/")[4]
+	url := fmt.Sprintf(`https://www.wtatennis.com/tournament/%s/beijing/%d/scores`, wtaDrawId, draw.Year)
 
 	c := colly.NewCollector()
 
@@ -274,7 +163,6 @@ func scrapeWTAFinal(draw DrawRecord) (slotSlice, map[string]string) {
 	})
 
 	c.OnScraped(func(r *colly.Response) {
-		fmt.Println("Finished scraping")
 		text := string(r.Body)
 		uncommented := strings.ReplaceAll(strings.ReplaceAll(text, "<!--", ""), "-->", "")
 		reader := strings.NewReader(uncommented)
@@ -288,15 +176,15 @@ func scrapeWTAFinal(draw DrawRecord) (slotSlice, map[string]string) {
 		completed.Each(func(_ int, match *goquery.Selection) {
 			roundLabel := trim(match.Find(".tennis-match__round").Text())
 			if roundLabel == "Final" {
-				name, seed := wtaExtractRow(match.Find(".match-table__team--winner"))
-				fmt.Println(seed, name)
-				// Remove print, define one slot to return. Accept draw, calculate URL based on ID and year, calculate round = Log2(draw.size) + 1
+				name, seed = wtaExtractName(match.Find(".match-table__team--winner"))
 			}
 		})
+
+		fmt.Println("Finished scraping WTA final")
 	})
 
 	fmt.Println("Start scraping")
-	c.Visit(hardcodedUrl)
+	c.Visit(url)
 
-	return slots, seeds
+	return name, seed
 }

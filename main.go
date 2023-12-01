@@ -40,7 +40,6 @@ func main() {
 			scrapedSlots, seeds = scrapeATP(draw)
 		} else if draw.Event == "Womens Singles" {
 			scrapedSlots, seeds = scrapeWTA(draw)
-			scrapeWTAFinal(draw)
 		} else {
 			fmt.Println("Invalid event:", draw.Event)
 		}
