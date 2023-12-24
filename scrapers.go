@@ -2,7 +2,6 @@ package main
 
 import (
 	"fmt"
-	"strconv"
 	"strings"
 
 	"github.com/PuerkitoBio/goquery"
@@ -27,44 +26,33 @@ func scrapeATP(draw DrawRecord) (slotSlice, map[string]string) {
 		fmt.Println("Response code:", r.StatusCode)
 	})
 
-	// first round
-	c.OnHTML(".scores-draw-entry-box-table", func(e *colly.HTMLElement) {
-		rows := e.DOM.ChildrenMatcher(goquery.Single("tbody")).Children()
-		rows.Each(func(_ int, row *goquery.Selection) {
-			values := row.Children().Map(func(_ int, s *goquery.Selection) string {
-				return trim(s.Text())
+	c.OnHTML("body", func(e *colly.HTMLElement) {
+		// first .draw-content element is part of the template, not the document we want to scrape
+		e.DOM.Find(".draw-content").First().Remove()
+		roundContainers := e.DOM.Find(".draw-content")
+
+		round := 0
+		roundContainers.Each(func(_ int, rc *goquery.Selection) {
+			round++
+			position := 1
+
+			players := rc.Find(".name")
+			players.Each(func(_ int, player *goquery.Selection) {
+				name := trim(player.Find("a").Text())
+				seed := trim(player.Find("span").Text())
+
+				slots.add(Slot{DrawID: draw.ID, Round: round, Position: position, Name: name, Seed: seed})
+				seeds[name] = seed
+
+				position++
 			})
-			positionStr, seed, name := values[0], values[1], values[2]
-
-			position, err := strconv.Atoi(positionStr)
-			if err != nil {
-				fmt.Println(err)
-			}
-
-			slots.add(Slot{DrawID: draw.ID, Round: 1, Position: position, Name: name, Seed: seed})
-
-			seeds[name] = seed
 		})
-	})
 
-	currentRound := 2
-	positions := make(map[int]int)
-
-	// other rounds
-	c.OnHTML(".scores-draw-entry-box-wrapper", func(e *colly.HTMLElement) {
-		rowspan, _ := e.DOM.Parent().Attr("rowspan")
-		if rowspan == "1" {
-			currentRound = 2
-		}
-
-		positions[currentRound]++
-		position := positions[currentRound]
-		name := trim(e.DOM.Children().ChildrenMatcher(goquery.Single(".scores-draw-entry-box-players-item")).Text())
-		seed := seeds[name]
-
-		slots.add(Slot{DrawID: draw.ID, Round: currentRound, Position: position, Name: name, Seed: seed})
-
-		currentRound++
+		round++
+		winner := e.DOM.Find(".draw-content").Last().Find(".winner").SiblingsFiltered(".name")
+		winnerName := trim(winner.Find("a").Text())
+		winnerSeed := trim(winner.Find("span").Text())
+		slots.add(Slot{DrawID: draw.ID, Round: round, Position: 1, Name: winnerName, Seed: winnerSeed})
 	})
 
 	c.OnScraped(func(r *colly.Response) {
@@ -110,8 +98,8 @@ func scrapeWTA(draw DrawRecord) (slotSlice, map[string]string) {
 					name, seed := wtaExtractName(row)
 
 					slots.add(Slot{DrawID: draw.ID, Round: round, Position: position, Name: name, Seed: seed})
-
 					seeds[name] = seed
+
 					position++
 				})
 			})
@@ -146,7 +134,8 @@ func scrapeWTAFinal(draw DrawRecord) (string, string) {
 	seed := ""
 
 	wtaDrawId := strings.Split(draw.Url, "/")[4]
-	url := fmt.Sprintf(`https://www.wtatennis.com/tournament/%s/beijing/%d/scores`, wtaDrawId, draw.Year)
+	wtaDrawSlug := strings.Split(draw.Url, "/")[5]
+	url := fmt.Sprintf(`https://www.wtatennis.com/tournament/%s/%s/%d/scores`, wtaDrawId, wtaDrawSlug, draw.Year)
 
 	c := colly.NewCollector()
 
