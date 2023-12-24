@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"os"
 
 	"github.com/joho/godotenv"
 )
@@ -18,7 +19,8 @@ type Slot struct {
 type slotSlice []Slot
 
 func main() {
-	err := godotenv.Load()
+	currentDir, _ := os.Getwd()
+	err := godotenv.Load(currentDir + "/.env")
 	if err != nil {
 		fmt.Println("Error loading .env file")
 	}
