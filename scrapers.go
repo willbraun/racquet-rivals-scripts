@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"log"
 	"strings"
 
 	"github.com/PuerkitoBio/goquery"
@@ -15,15 +16,18 @@ func scrapeATP(draw DrawRecord) (slotSlice, map[string]string) {
 	c := colly.NewCollector()
 
 	c.OnRequest(func(r *colly.Request) {
-		fmt.Println("Visiting", r.URL)
+		printWithTimestamp("Visiting", r.URL)
 	})
 
 	c.OnError(func(_ *colly.Response, err error) {
-		fmt.Println("Something went wrong:", err)
+		log.Println("Something went wrong:", err)
 	})
 
 	c.OnResponse(func(r *colly.Response) {
-		fmt.Println("Response code:", r.StatusCode)
+		printWithTimestamp("Response code:", r.StatusCode)
+		if r.StatusCode != 200 {
+			log.Println("Response code:", r.StatusCode)
+		}
 	})
 
 	c.OnHTML("body", func(e *colly.HTMLElement) {
@@ -56,10 +60,10 @@ func scrapeATP(draw DrawRecord) (slotSlice, map[string]string) {
 	})
 
 	c.OnScraped(func(r *colly.Response) {
-		fmt.Println("Finished scraping ATP")
+		printWithTimestamp("Finished scraping ATP")
 	})
 
-	fmt.Println("Start scraping")
+	printWithTimestamp("Start scraping ATP")
 	c.Visit(draw.Url)
 
 	return slots, seeds
@@ -72,15 +76,18 @@ func scrapeWTA(draw DrawRecord) (slotSlice, map[string]string) {
 	c := colly.NewCollector()
 
 	c.OnRequest(func(r *colly.Request) {
-		fmt.Println("Visiting", r.URL)
+		printWithTimestamp("Visiting", r.URL)
 	})
 
 	c.OnError(func(_ *colly.Response, err error) {
-		fmt.Println("Something went wrong:", err)
+		log.Println("Something went wrong:", err)
 	})
 
 	c.OnResponse(func(r *colly.Response) {
-		fmt.Println("Response code:", r.StatusCode)
+		printWithTimestamp("Response code:", r.StatusCode)
+		if r.StatusCode != 200 {
+			log.Println("Response code:", r.StatusCode)
+		}
 	})
 
 	c.OnHTML(`.tournament-draw__tab[data-ui-tab="Singles"]`, func(e *colly.HTMLElement) {
@@ -111,10 +118,10 @@ func scrapeWTA(draw DrawRecord) (slotSlice, map[string]string) {
 	})
 
 	c.OnScraped(func(r *colly.Response) {
-		fmt.Println("Finished scraping WTA")
+		printWithTimestamp("Finished scraping WTA")
 	})
 
-	fmt.Println("Start scraping")
+	printWithTimestamp("Start scraping WTA")
 	c.Visit(draw.Url)
 
 	return slots, seeds
@@ -140,15 +147,18 @@ func scrapeWTAFinal(draw DrawRecord) (string, string) {
 	c := colly.NewCollector()
 
 	c.OnRequest(func(r *colly.Request) {
-		fmt.Println("Visiting", r.URL)
+		printWithTimestamp("Visiting", r.URL)
 	})
 
 	c.OnError(func(_ *colly.Response, err error) {
-		fmt.Println("Something went wrong:", err)
+		log.Println("Something went wrong:", err)
 	})
 
 	c.OnResponse(func(r *colly.Response) {
-		fmt.Println("Response code:", r.StatusCode)
+		printWithTimestamp("Response code:", r.StatusCode)
+		if r.StatusCode != 200 {
+			log.Println("Response code:", r.StatusCode)
+		}
 	})
 
 	c.OnScraped(func(r *colly.Response) {
@@ -158,7 +168,7 @@ func scrapeWTAFinal(draw DrawRecord) (string, string) {
 
 		doc, err := goquery.NewDocumentFromReader(reader)
 		if err != nil {
-			fmt.Println(err)
+			log.Println(err)
 		}
 
 		completed := doc.Find(`.tournament-scores__tab[data-ui-tab="Singles"]`).Find(".tennis-match--completed")
@@ -168,11 +178,13 @@ func scrapeWTAFinal(draw DrawRecord) (string, string) {
 				name, seed = wtaExtractName(match.Find(".match-table__team--winner"))
 			}
 		})
-
-		fmt.Println("Finished scraping WTA final")
 	})
 
-	fmt.Println("Start scraping")
+	c.OnScraped(func(r *colly.Response) {
+		printWithTimestamp("Finished scraping WTA final")
+	})
+
+	printWithTimestamp("Start scraping WTA final")
 	c.Visit(url)
 
 	return name, seed

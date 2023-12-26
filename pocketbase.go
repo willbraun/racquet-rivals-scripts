@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
+	"log"
 	"net/http"
 	"os"
 	"time"
@@ -111,16 +112,15 @@ func login() string {
 
 	res, err := makeHTTPRequest("POST", url, "", requestData)
 	if err != nil {
-		fmt.Println(err)
+		log.Println(err)
 		return ""
 	}
 	defer res.Body.Close()
 
 	userAuthRes := &UserAuthRes{}
-	fmt.Println("Auth request status:", res.Status)
 	derr := json.NewDecoder(res.Body).Decode(userAuthRes)
 	if derr != nil {
-		fmt.Println(err)
+		log.Println(derr)
 		return ""
 	}
 
@@ -133,7 +133,7 @@ func getDraws(token string) []DrawRecord {
 
 	res, err := makeHTTPRequest("GET", url, token, nil)
 	if err != nil {
-		fmt.Println(err)
+		log.Println(err)
 		return nil
 	}
 	defer res.Body.Close()
@@ -141,7 +141,7 @@ func getDraws(token string) []DrawRecord {
 	drawRes := &DrawRes{}
 	derr := json.NewDecoder(res.Body).Decode(drawRes)
 	if derr != nil {
-		fmt.Println(derr)
+		log.Println(derr)
 		return nil
 	}
 
@@ -153,14 +153,14 @@ func getSlots(drawId string, token string) []SlotRecord {
 
 	res, err := makeHTTPRequest("GET", url, token, nil)
 	if err != nil {
-		fmt.Println(err)
+		log.Println(err)
 	}
 	defer res.Body.Close()
 
 	slotRes := &SlotRes{}
 	derr := json.NewDecoder(res.Body).Decode(slotRes)
 	if derr != nil {
-		fmt.Println(derr)
+		log.Println(derr)
 		return nil
 	}
 
@@ -184,11 +184,11 @@ func postSlots(slots slotSlice, token string) {
 		}
 		res, err := makeHTTPRequest("POST", url, token, requestData)
 		if err != nil {
-			fmt.Println(err)
+			log.Println(err)
 		}
 		defer res.Body.Close()
 
-		fmt.Println(res.Status, "added", slot)
+		printWithTimestamp(res.Status, "added", slot)
 	}
 }
 
@@ -208,10 +208,10 @@ func updateSlots(slots slotSlice, token string) {
 		}
 		res, err := makeHTTPRequest("PATCH", url, token, requestData)
 		if err != nil {
-			fmt.Println(err)
+			log.Println(err)
 		}
 		defer res.Body.Close()
 
-		fmt.Println(res.Status, "updated", slot)
+		printWithTimestamp(res.Status, "updated", slot)
 	}
 }

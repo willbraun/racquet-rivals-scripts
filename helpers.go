@@ -3,7 +3,15 @@ package main
 import (
 	"fmt"
 	"strings"
+	"time"
 )
+
+func printWithTimestamp(a ...any) {
+	timestamp := time.Now().Format("2006/01/02 15:04:05")
+	message := fmt.Sprintf("%s %v", timestamp, a)
+	formatted := strings.ReplaceAll(strings.ReplaceAll(message, "[", ""), "]", "")
+	fmt.Println(formatted)
+}
 
 func trim(s string) string {
 	return strings.Trim(s, " \n\r")

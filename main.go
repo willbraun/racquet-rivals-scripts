@@ -1,8 +1,9 @@
 package main
 
 import (
-	"fmt"
+	"log"
 	"os"
+	"time"
 
 	"github.com/joho/godotenv"
 )
@@ -19,17 +20,25 @@ type Slot struct {
 type slotSlice []Slot
 
 func main() {
-	currentDir, _ := os.Getwd()
-	err := godotenv.Load(currentDir + "/.env")
+	location, err := time.LoadLocation("UTC")
 	if err != nil {
-		fmt.Println("Error loading .env file")
+		log.Fatal(err)
+	}
+	time.Local = location
+
+	log.SetOutput(os.Stderr)
+
+	currentDir, _ := os.Getwd()
+	envErr := godotenv.Load(currentDir + "/.env")
+	if envErr != nil {
+		log.Println("Error loading .env file,", envErr)
 	}
 
 	token := login()
 	draws := getDraws(token)
 
 	if len(draws) == 0 {
-		fmt.Println("No active draws")
+		printWithTimestamp("No active draws")
 		return
 	}
 
@@ -43,7 +52,7 @@ func main() {
 		} else if draw.Event == "Womens Singles" {
 			scrapedSlots, seeds = scrapeWTA(draw)
 		} else {
-			fmt.Println("Invalid event:", draw.Event)
+			log.Println("Invalid event:", draw.Event)
 		}
 
 		newSlots := getNewSlots(scrapedSlots, currentSlots)
