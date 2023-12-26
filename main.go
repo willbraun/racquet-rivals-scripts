@@ -3,6 +3,7 @@ package main
 import (
 	"log"
 	"os"
+	"strings"
 	"time"
 
 	"github.com/joho/godotenv"
@@ -30,7 +31,7 @@ func main() {
 
 	currentDir, _ := os.Getwd()
 	envErr := godotenv.Load(currentDir + "/.env")
-	if envErr != nil {
+	if envErr != nil && strings.Contains(os.Getenv("BASE_URL"), "http://") {
 		log.Println("Error loading .env file,", envErr)
 	}
 
