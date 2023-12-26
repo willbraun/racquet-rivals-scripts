@@ -29,10 +29,13 @@ func main() {
 
 	log.SetOutput(os.Stderr)
 
-	currentDir, _ := os.Getwd()
-	envErr := godotenv.Load(currentDir + "/.env")
-	if envErr != nil && strings.Contains(os.Getenv("BASE_URL"), "http://") {
-		log.Println("Error loading .env file,", envErr)
+	// set environment variables for local testing
+	// on remote (https), environment variables are set before running script
+	if !strings.Contains(os.Getenv("BASE_URL"), "https://") {
+		envErr := godotenv.Load()
+		if envErr != nil {
+			log.Println("Error loading .env file,", envErr)
+		}
 	}
 
 	token := login()
