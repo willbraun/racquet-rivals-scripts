@@ -19,8 +19,8 @@ func scrapeATP(draw DrawRecord) (slotSlice, map[string]string) {
 		printWithTimestamp("Visiting", r.URL)
 	})
 
-	c.OnError(func(_ *colly.Response, err error) {
-		log.Println("Something went wrong - ATP:", err)
+	c.OnError(func(r *colly.Response, err error) {
+		log.Println("Something went wrong - ATP:", r.StatusCode, err)
 	})
 
 	c.OnResponse(func(r *colly.Response) {
@@ -79,8 +79,8 @@ func scrapeWTA(draw DrawRecord) (slotSlice, map[string]string) {
 		printWithTimestamp("Visiting", r.URL)
 	})
 
-	c.OnError(func(_ *colly.Response, err error) {
-		log.Println("Something went wrong - WTA:", err)
+	c.OnError(func(r *colly.Response, err error) {
+		log.Println("Something went wrong - WTA:", r.StatusCode, err)
 	})
 
 	c.OnResponse(func(r *colly.Response) {
