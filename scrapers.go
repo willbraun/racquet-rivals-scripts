@@ -8,6 +8,7 @@ import (
 	"net/http"
 	"net/url"
 	"os"
+	"regexp"
 	"strings"
 
 	"github.com/PuerkitoBio/goquery"
@@ -123,7 +124,12 @@ func scrapeWTA(draw DrawRecord) (slotSlice, map[string]string) {
 	})
 
 	round++
-	winnerName, winnerSeed := scrapeWTAFinal(draw)
+	winnerName := ""
+	winnerSeed := ""
+	if slots[len(slots)-1].Name != "" {
+		winnerName, winnerSeed = scrapeWTAFinal(draw)
+	}
+
 	slots.add(Slot{DrawID: draw.ID, Round: round, Position: 1, Name: winnerName, Seed: winnerSeed})
 
 	return slots, seeds
@@ -138,7 +144,8 @@ func scrapeWTAFinal(draw DrawRecord) (string, string) {
 	url := fmt.Sprintf(`https://www.wtatennis.com/tournament/%s/%s/%d/scores`, wtaDrawId, wtaDrawSlug, draw.Year)
 
 	html := scrapeWithProxy(url)
-	reader := strings.NewReader(html)
+	uncommented := regexp.MustCompile(`<!--|-->`).ReplaceAllString(html, "")
+	reader := strings.NewReader(uncommented)
 
 	doc, err := goquery.NewDocumentFromReader(reader)
 	if err != nil {
