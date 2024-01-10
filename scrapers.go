@@ -60,9 +60,9 @@ func scrapeATP(draw DrawRecord) (slotSlice, map[string]string) {
 		log.Println(err)
 	}
 
-	// first .draw-content element is part of the template, not the document we want to scrape
-	doc.Find(".draw-content").First().Remove()
-	roundContainers := doc.Find(".draw-content")
+	roundContainers := doc.Find(".draw-content").FilterFunction(func(_ int, selection *goquery.Selection) bool {
+		return !selection.Parents().Is("template")
+	})
 
 	round := 0
 	roundContainers.Each(func(_ int, rc *goquery.Selection) {
