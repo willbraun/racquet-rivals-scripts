@@ -9,6 +9,8 @@ import (
 )
 
 func TestScrapeATP(t *testing.T) {
+	t.Parallel()
+
 	err := godotenv.Load()
 	if err != nil {
 		log.Println("Error loading .env file,", err)
@@ -26,18 +28,21 @@ func TestScrapeATP(t *testing.T) {
 		Size:             32,
 	}
 
-	t.Run("Scrape ATP", func(t *testing.T) {
+	t.Run("Check ATP slots", func(t *testing.T) {
 		scrapedSlots, seeds := scrapeATP(draw)
+		assert := assert.New(t)
 
-		assert.Equal(t, len(scrapedSlots), 63)
+		assert.Equal(len(scrapedSlots), 63)
 		for _, slot := range scrapedSlots {
-			assert.NotEqual(t, slot.Name, "")
+			assert.NotEmpty(slot.Name)
 		}
-		assert.Equal(t, len(seeds), 32)
+		assert.Equal(len(seeds), 32)
 	})
 }
 
 func TestScrapeWTA(t *testing.T) {
+	t.Parallel()
+	
 	err := godotenv.Load()
 	if err != nil {
 		log.Println("Error loading .env file,", err)
@@ -57,11 +62,12 @@ func TestScrapeWTA(t *testing.T) {
 
 	t.Run("Scrape WTA", func(t *testing.T) {
 		scrapedSlots, seeds := scrapeWTA(draw)
+		assert := assert.New(t)
 
-		assert.Equal(t, len(scrapedSlots), 127)
+		assert.Equal(len(scrapedSlots), 127)
 		for _, slot := range scrapedSlots {
-			assert.NotEqual(t, slot.Name, "")
+			assert.NotEmpty(slot.Name)
 		}
-		assert.Equal(t, len(seeds), 49) // only 48 players, plus the BYE in this draw
+		assert.Equal(len(seeds), 49) // only 48 players, plus the BYE in this draw
 	})
 }
