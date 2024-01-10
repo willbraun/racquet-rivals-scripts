@@ -42,7 +42,7 @@ func TestScrapeATP(t *testing.T) {
 
 func TestScrapeWTA(t *testing.T) {
 	t.Parallel()
-	
+
 	err := godotenv.Load()
 	if err != nil {
 		log.Println("Error loading .env file,", err)
