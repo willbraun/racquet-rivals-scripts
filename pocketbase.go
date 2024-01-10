@@ -34,6 +34,7 @@ type DrawRecord struct {
 	Start_Date       string `json:"start_date"`
 	End_Date         string `json:"end_date"`
 	Prediction_Close string `json:"prediction_close"`
+	Size             int    `json:"size"`
 }
 
 type DrawRes struct {
