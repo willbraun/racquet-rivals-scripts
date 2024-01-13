@@ -167,6 +167,11 @@ func wtaExtractName(x *goquery.Selection) (string, string) {
 	firstInitial := trim(x.Find(".match-table__player-fname").Text())
 	lastName := trim(x.Find(".match-table__player-lname").Text())
 	name := trim(fmt.Sprintf(`%s %s`, firstInitial, lastName))
+
+	if !hasAlphabet(name) {
+		return "", ""
+	}
+
 	seed := trim(x.Find(".match-table__player-seed").Text())
 
 	return name, seed

@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"regexp"
 	"strings"
 	"time"
 )
@@ -15,6 +16,11 @@ func printWithTimestamp(a ...any) {
 
 func trim(s string) string {
 	return strings.Trim(s, " \n\r")
+}
+
+func hasAlphabet(input string) bool {
+	hasAlphabetPattern := regexp.MustCompile("[a-zA-Z]")
+	return hasAlphabetPattern.MatchString(input)
 }
 
 func (ss *slotSlice) add(s Slot) {

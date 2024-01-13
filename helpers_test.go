@@ -154,3 +154,29 @@ func TestToSlotSlice(t *testing.T) {
 		assert.Equal(testSlice, slotSlice{})
 	})
 }
+
+func TestNoAlphabet(t *testing.T) {
+	t.Parallel()
+	assert := assert.New(t)
+
+	cases := []struct {
+		s        string
+		expected bool
+	}{
+		{"", false},
+		{" ", false},
+		{"-", false},
+		{" - ", false},
+		{"04-=+./?!@%{}[]()", false},
+		{"a", true},
+		{"A", true},
+		{"name", true},
+		{"Roger Federer", true},
+		{"N. Osaka", true},
+		{"-23489.<;@T972347", true},
+	}
+
+	for _, item := range cases {
+		assert.Equal(hasAlphabet(item.s), item.expected)
+	}
+}
