@@ -164,9 +164,10 @@ func scrapeWTAFinal(draw DrawRecord) (string, string) {
 }
 
 func wtaExtractName(x *goquery.Selection) (string, string) {
-	firstInitial := trim(x.Find(".match-table__player-fname").Text())
+	firstNameRaw := trim(x.Find(".match-table__player-fname").Text())
+	firstName := strings.ReplaceAll(firstNameRaw, ".", "")
 	lastName := trim(x.Find(".match-table__player-lname").Text())
-	name := trim(fmt.Sprintf(`%s %s`, firstInitial, lastName))
+	name := trim(firstName + " " + lastName)
 
 	if !hasAlphabet(name) {
 		return "", ""
