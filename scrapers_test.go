@@ -19,7 +19,7 @@ func TestScrapeATP(t *testing.T) {
 	draw := DrawRecord{
 		ID:               "abc123",
 		Name:             "Brisbane International",
-		Event:            "Mens Singles",
+		Event:            "Men's Singles",
 		Year:             2024,
 		Url:              "https://www.atptour.com/en/scores/archive/brisbane/339/2024/draws",
 		Start_Date:       "2023-12-31 12:00:00.000",
@@ -51,7 +51,7 @@ func TestScrapeWTA(t *testing.T) {
 	draw := DrawRecord{
 		ID:               "abc123",
 		Name:             "Brisbane International",
-		Event:            "Womens Singles",
+		Event:            "Women's Singles",
 		Year:             2024,
 		Url:              "https://www.wtatennis.com/tournament/800/brisbane/2024/draws",
 		Start_Date:       "2023-12-31 12:00:00.000",

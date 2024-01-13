@@ -52,9 +52,9 @@ func main() {
 		var scrapedSlots slotSlice
 		var seeds map[string]string
 
-		if draw.Event == "Mens Singles" {
+		if draw.Event == "Men's Singles" {
 			scrapedSlots, seeds = scrapeATP(draw)
-		} else if draw.Event == "Womens Singles" {
+		} else if draw.Event == "Women's Singles" {
 			scrapedSlots, seeds = scrapeWTA(draw)
 		} else {
 			log.Println("Invalid event:", draw.Event)
