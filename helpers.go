@@ -23,6 +23,11 @@ func hasAlphabet(input string) bool {
 	return hasAlphabetPattern.MatchString(input)
 }
 
+func getLastName(name string) string {
+	nameSlice := strings.Split(name, " ")
+	return nameSlice[len(nameSlice)-1]
+}
+
 func (ss *slotSlice) add(s Slot) {
 	*ss = append(*ss, s)
 }

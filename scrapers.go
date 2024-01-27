@@ -123,21 +123,28 @@ func scrapeWTA(draw DrawRecord) (slotSlice, map[string]string) {
 		})
 	})
 
-	round++
 	winnerName := ""
 	winnerSeed := ""
 	if slots[len(slots)-1].Name != "" {
-		winnerName, winnerSeed = scrapeWTAFinal(draw)
+		winnerName = scrapeWTAFinal(draw)
+
+		for _, slot := range slots {
+			if slot.Round == round && getLastName(slot.Name) == getLastName(winnerName) {
+				winnerName = slot.Name
+				winnerSeed = slot.Seed
+				break
+			}
+		}
 	}
 
+	round++
 	slots.add(Slot{DrawID: draw.ID, Round: round, Position: 1, Name: winnerName, Seed: winnerSeed})
 
 	return slots, seeds
 }
 
-func scrapeWTAFinal(draw DrawRecord) (string, string) {
+func scrapeWTAFinal(draw DrawRecord) string {
 	name := ""
-	seed := ""
 
 	wtaDrawId := strings.Split(draw.Url, "/")[4]
 	wtaDrawSlug := strings.Split(draw.Url, "/")[5]
@@ -156,11 +163,11 @@ func scrapeWTAFinal(draw DrawRecord) (string, string) {
 	completed.Each(func(_ int, match *goquery.Selection) {
 		roundLabel := trim(match.Find(".tennis-match__round").Text())
 		if roundLabel == "Final" {
-			name, seed = wtaExtractName(match.Find(".match-table__team--winner"))
+			name, _ = wtaExtractName(match.Find(".match-table__team--winner"))
 		}
 	})
 
-	return name, seed
+	return name
 }
 
 func wtaExtractName(x *goquery.Selection) (string, string) {
