@@ -125,7 +125,7 @@ func scrapeWTA(draw DrawRecord) (slotSlice, map[string]string) {
 
 	winnerName := ""
 	winnerSeed := ""
-	if slots[len(slots)-1].Name != "" {
+	if len(slots) > 0 && slots[len(slots)-1].Name != "" {
 		winnerName = scrapeWTAFinal(draw)
 
 		for _, slot := range slots {

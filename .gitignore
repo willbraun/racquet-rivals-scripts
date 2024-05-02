@@ -1,3 +1,4 @@
 .env
 tennis-bracket-scripts
 scrape-draws
+.DS_Store

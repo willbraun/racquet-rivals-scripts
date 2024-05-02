@@ -1,7 +1,6 @@
 package main
 
 import (
-	"fmt"
 	"log"
 	"os"
 	"strings"
@@ -64,12 +63,12 @@ func main() {
 		expected := (draw.Size * 2) - 1
 
 		if received != expected {
-			log.Println(fmt.Sprintf("Incorrect number of scraped slots for %s %s %d. Expected: %d, received: %d.",
+			log.Printf("Incorrect number of scraped slots for %s %s %d. Expected: %d, received: %d.",
 				draw.Name,
 				draw.Event,
 				draw.Year,
 				expected,
-				received))
+				received)
 			continue
 		}
 
