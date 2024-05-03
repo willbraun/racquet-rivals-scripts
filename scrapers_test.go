@@ -28,7 +28,7 @@ func TestScrapeATP(t *testing.T) {
 		Size:             32,
 	}
 
-	t.Run("Check ATP slots", func(t *testing.T) {
+	t.Run("Scrape ATP", func(t *testing.T) {
 		scrapedSlots, seeds := scrapeATP(draw)
 		assert := assert.New(t)
 
