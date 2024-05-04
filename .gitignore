@@ -1,4 +1,6 @@
 .env
 tennis-bracket-scripts
 scrape-draws
+scrape-draws.zip
 .DS_Store
+deploy.sh
