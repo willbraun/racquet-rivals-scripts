@@ -74,11 +74,20 @@ func prepareUpdates(scraped slotSlice, current slotSlice, seeds map[string]strin
 		key := getSlotKey(slot)
 		newName := scrapedMap[key]
 		newSeed := seeds[newName]
-		if newName != slot.Name || newSeed != slot.Seed {
-			slot.Name = newName
-			slot.Seed = newSeed
-			result.add(slot)
+
+		// don't clear slots with existing data
+		if newName == "" {
+			continue
 		}
+
+		// no update needed
+		if newName == slot.Name && newSeed == slot.Seed {
+			continue
+		}
+
+		slot.Name = newName
+		slot.Seed = newSeed
+		result.add(slot)
 	}
 
 	return result
