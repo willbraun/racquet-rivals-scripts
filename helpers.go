@@ -32,10 +32,17 @@ func (ss *slotSlice) add(s Slot) {
 	*ss = append(*ss, s)
 }
 
-func toSlotSlice(s []SlotRecord) slotSlice {
+func toSlotSlice(sr []SlotRecord) slotSlice {
 	result := slotSlice{}
-	for _, v := range s {
-		result.add(Slot(v))
+	for _, r := range sr {
+		result.add(Slot{
+			ID:       r.ID,
+			DrawID:   r.DrawID,
+			Round:    r.Round,
+			Position: r.Position,
+			Name:     r.Name,
+			Seed:     r.Seed,
+		})
 	}
 	return result
 }
