@@ -36,7 +36,7 @@ func TestScrapeATP(t *testing.T) {
 
 		assert.Equal(len(scrapedSlots), 255)
 
-		// If the draw is not complete, the last slot will be empty
+		// If the draw is not complete, there will be an extra empty seed representing empty slots
 		delete(seeds, "")
 		assert.Equal(len(seeds), 128)
 	})
