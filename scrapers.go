@@ -48,47 +48,47 @@ func scrapeWithProxy(targetURL string) string {
 	return string(body)
 }
 
-// func scrapeATP(draw DrawRecord) (slotSlice, map[string]string) {
-// 	slots := slotSlice{}
-// 	seeds := make(map[string]string)
+func scrapeATP(draw DrawRecord) (slotSlice, map[string]string) {
+	slots := slotSlice{}
+	seeds := make(map[string]string)
 
-// 	html := scrapeWithProxy(draw.Url)
-// 	reader := strings.NewReader(html)
+	html := scrapeWithProxy(draw.Url)
+	reader := strings.NewReader(html)
 
-// 	doc, err := goquery.NewDocumentFromReader(reader)
-// 	if err != nil {
-// 		log.Println(err)
-// 	}
+	doc, err := goquery.NewDocumentFromReader(reader)
+	if err != nil {
+		log.Println(err)
+	}
 
-// 	roundContainers := doc.Find(".draw-content").FilterFunction(func(_ int, selection *goquery.Selection) bool {
-// 		return !selection.Parents().Is("template")
-// 	})
+	roundContainers := doc.Find(".draw-content").FilterFunction(func(_ int, selection *goquery.Selection) bool {
+		return !selection.Parents().Is("template")
+	})
 
-// 	round := 0
-// 	roundContainers.Each(func(_ int, rc *goquery.Selection) {
-// 		round++
-// 		position := 1
+	round := 0
+	roundContainers.Each(func(_ int, rc *goquery.Selection) {
+		round++
+		position := 1
 
-// 		players := rc.Find(".name")
-// 		players.Each(func(_ int, player *goquery.Selection) {
-// 			name := trim(player.Find("a").Text())
-// 			seed := trim(player.Find("span").Text())
+		players := rc.Find(".name")
+		players.Each(func(_ int, player *goquery.Selection) {
+			name := trim(player.Find("a").Text())
+			seed := trim(player.Find("span").Text())
 
-// 			slots.add(Slot{DrawID: draw.ID, Round: round, Position: position, Name: name, Seed: seed})
-// 			seeds[name] = seed
+			slots.add(Slot{DrawID: draw.ID, Round: round, Position: position, Name: name, Seed: seed})
+			seeds[name] = seed
 
-// 			position++
-// 		})
-// 	})
+			position++
+		})
+	})
 
-// 	round++
-// 	winner := doc.Find(".draw-content").Last().Find(".winner").SiblingsFiltered(".name")
-// 	winnerName := trim(winner.Find("a").Text())
-// 	winnerSeed := trim(winner.Find("span").Text())
-// 	slots.add(Slot{DrawID: draw.ID, Round: round, Position: 1, Name: winnerName, Seed: winnerSeed})
+	round++
+	winner := doc.Find(".draw-content").Last().Find(".winner").SiblingsFiltered(".name")
+	winnerName := trim(winner.Find("a").Text())
+	winnerSeed := trim(winner.Find("span").Text())
+	slots.add(Slot{DrawID: draw.ID, Round: round, Position: 1, Name: winnerName, Seed: winnerSeed})
 
-// 	return slots, seeds
-// }
+	return slots, seeds
+}
 
 func scrapeWTA(draw DrawRecord) (slotSlice, map[string]string) {
 	slots := slotSlice{}

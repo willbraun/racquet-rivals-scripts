@@ -52,8 +52,7 @@ func main() {
 		var seeds map[string]string
 
 		if draw.Event == "Men's Singles" {
-			// Cannot scrape ATP as of 1/10/2025
-			// scrapedSlots, seeds = scrapeATP(draw)
+			scrapedSlots, seeds = scrapeATP(draw)
 			log.Println("Cannot scrape ATP draw:", draw.Name, draw.Event, draw.Year)
 		} else if draw.Event == "Women's Singles" {
 			scrapedSlots, seeds = scrapeWTA(draw)
