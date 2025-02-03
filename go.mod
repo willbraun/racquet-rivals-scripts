@@ -1,6 +1,6 @@
 module tennis-bracket-scripts
 
-go 1.21.1
+go 1.23.5
 
 require (
 	github.com/PuerkitoBio/goquery v1.9.2

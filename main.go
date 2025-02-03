@@ -9,41 +9,24 @@ import (
 	"github.com/joho/godotenv"
 )
 
-type SlotSet struct {
+type SetScore struct {
 	Number   int
 	Games    int
 	Tiebreak int
 }
 
 type Slot struct {
-	ID       string
-	DrawID   string
-	Round    int
-	Position int
-	Name     string
-	Seed     string
-	Winner   bool
-	Sets     []SlotSet
+	ID        string
+	DrawID    string
+	Round     int
+	Position  int
+	Name      string
+	Seed      string
+	Winner    bool
+	SetScores []SetScore
 }
 
 type slotSlice []Slot
-
-type Set struct {
-	ID         string
-	MatchID    string
-	Number     int
-	P1Games    int
-	P2Games    int
-	P1Tiebreak int
-	P2Tiebreak int
-}
-
-type Match struct {
-	ID           string
-	WinnerSlotID string
-	Status       string
-	Sets         []Set
-}
 
 func main() {
 	location, err := time.LoadLocation("UTC")
