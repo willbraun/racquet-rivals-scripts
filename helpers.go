@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"os"
 	"regexp"
 	"strings"
 	"time"
@@ -98,4 +99,16 @@ func prepareUpdates(scraped slotSlice, current slotSlice, seeds map[string]strin
 	}
 
 	return result
+}
+
+func saveHTMLToFile(html, filename string) error {
+	return os.WriteFile(filename, []byte(html), 0644)
+}
+
+func readHTMLFromFile(filename string) (string, error) {
+	data, err := os.ReadFile(filename)
+	if err != nil {
+		return "", err
+	}
+	return string(data), nil
 }

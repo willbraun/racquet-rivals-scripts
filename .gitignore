@@ -4,3 +4,4 @@ scrape-draws
 scrape-draws.zip
 .DS_Store
 deploy.sh
+/scraped_pages

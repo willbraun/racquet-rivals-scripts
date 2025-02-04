@@ -52,7 +52,13 @@ func scrapeATP(draw DrawRecord) (slotSlice, map[string]string) {
 	slots := slotSlice{}
 	seeds := make(map[string]string)
 
-	html := scrapeWithProxy(draw.Url)
+	// html := scrapeWithProxy(draw.Url)
+	html, err := readHTMLFromFile("scraped_pages/atp.html")
+	if err != nil {
+		log.Println("Error reading HTML from ATP file:", err)
+		return slots, seeds
+	}
+
 	reader := strings.NewReader(html)
 
 	doc, err := goquery.NewDocumentFromReader(reader)
@@ -94,7 +100,13 @@ func scrapeWTA(draw DrawRecord) (slotSlice, map[string]string) {
 	slots := slotSlice{}
 	seeds := make(map[string]string)
 
-	html := scrapeWithProxy(draw.Url)
+	// html := scrapeWithProxy(draw.Url)
+	html, err := readHTMLFromFile("scraped_pages/wta.html")
+	if err != nil {
+		log.Println("Error reading HTML from WTA file:", err)
+		return slots, seeds
+	}
+
 	reader := strings.NewReader(html)
 
 	doc, err := goquery.NewDocumentFromReader(reader)
@@ -146,11 +158,17 @@ func scrapeWTA(draw DrawRecord) (slotSlice, map[string]string) {
 func scrapeWTAFinal(draw DrawRecord) string {
 	name := ""
 
-	wtaDrawId := strings.Split(draw.Url, "/")[4]
-	wtaDrawSlug := strings.Split(draw.Url, "/")[5]
-	url := fmt.Sprintf(`https://www.wtatennis.com/tournament/%s/%s/%d/scores`, wtaDrawId, wtaDrawSlug, draw.Year)
+	// wtaDrawId := strings.Split(draw.Url, "/")[4]
+	// wtaDrawSlug := strings.Split(draw.Url, "/")[5]
+	// url := fmt.Sprintf(`https://www.wtatennis.com/tournament/%s/%s/%d/scores`, wtaDrawId, wtaDrawSlug, draw.Year)
 
-	html := scrapeWithProxy(url)
+	// html := scrapeWithProxy(url)
+	html, err := readHTMLFromFile("scraped_pages/wtaFinal.html")
+	if err != nil {
+		log.Println("Error reading HTML from WTA file:", err)
+		return err.Error()
+	}
+
 	uncommented := regexp.MustCompile(`<!--|-->`).ReplaceAllString(html, "")
 	reader := strings.NewReader(uncommented)
 
