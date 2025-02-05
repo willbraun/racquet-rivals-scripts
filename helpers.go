@@ -52,6 +52,8 @@ func toSlotSlice(sr []SlotRecord) slotSlice {
 					Games:    *gamesValue.Interface().(*int),
 					Tiebreak: *tiebreakValue.Interface().(*int),
 				})
+			} else {
+				break
 			}
 		}
 
