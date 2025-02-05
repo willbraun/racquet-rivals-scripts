@@ -46,12 +46,22 @@ type DrawRes struct {
 }
 
 type SlotRecord struct {
-	ID       string `json:"id"`
-	DrawID   string `json:"draw_id"`
-	Round    int    `json:"round"`
-	Position int    `json:"position"`
-	Name     string `json:"name"`
-	Seed     string `json:"seed"`
+	ID           string `json:"id"`
+	DrawID       string `json:"draw_id"`
+	Round        int    `json:"round"`
+	Position     int    `json:"position"`
+	Name         string `json:"name"`
+	Seed         string `json:"seed"`
+	Set1Games    *int   `json:"set1_games"`
+	Set1Tiebreak *int   `json:"set1_tiebreak"`
+	Set2Games    *int   `json:"set2_games"`
+	Set2Tiebreak *int   `json:"set2_tiebreak"`
+	Set3Games    *int   `json:"set3_games"`
+	Set3Tiebreak *int   `json:"set3_tiebreak"`
+	Set4Games    *int   `json:"set4_games"`
+	Set4Tiebreak *int   `json:"set4_tiebreak"`
+	Set5Games    *int   `json:"set5_games"`
+	Set5Tiebreak *int   `json:"set5_tiebreak"`
 }
 
 type SlotRes struct {
@@ -149,8 +159,8 @@ func getDraws(token string) []DrawRecord {
 	return drawRes.Items
 }
 
-func getSlots(drawId string, token string) []SlotRecord {
-	url := fmt.Sprintf(`%s/api/collections/draw_slot/records?perPage=255&filter=(draw_id="%s")&skipTotal=true`, os.Getenv("BASE_URL"), drawId)
+func getSlots(drawId string, token string) slotSlice {
+	url := fmt.Sprintf(`%s/api/collections/slots_with_scores/records?perPage=255&filter=(draw_id="%s")&skipTotal=true`, os.Getenv("BASE_URL"), drawId)
 
 	res, err := makeHTTPRequest("GET", url, token, nil)
 	if err != nil {
@@ -165,7 +175,7 @@ func getSlots(drawId string, token string) []SlotRecord {
 		return nil
 	}
 
-	return slotRes.Items
+	return toSlotSlice(slotRes.Items)
 }
 
 func postSlots(slots slotSlice, token string) {

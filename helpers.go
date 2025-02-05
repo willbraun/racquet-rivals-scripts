@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 	"os"
+	"reflect"
 	"regexp"
 	"strings"
 	"time"
@@ -36,13 +37,32 @@ func (ss *slotSlice) add(s Slot) {
 func toSlotSlice(sr []SlotRecord) slotSlice {
 	result := slotSlice{}
 	for _, r := range sr {
+		setScores := []SetScore{}
+
+		for i := 1; i <= 5; i++ {
+			gamesField := fmt.Sprintf("Set%dGames", i)
+			tiebreakField := fmt.Sprintf("Set%dTiebreak", i)
+
+			gamesValue := reflect.ValueOf(r).FieldByName(gamesField)
+			tiebreakValue := reflect.ValueOf(r).FieldByName(tiebreakField)
+
+			if gamesValue.IsValid() && !gamesValue.IsNil() {
+				setScores = append(setScores, SetScore{
+					Number:   i,
+					Games:    *gamesValue.Interface().(*int),
+					Tiebreak: *tiebreakValue.Interface().(*int),
+				})
+			}
+		}
+
 		result.add(Slot{
-			ID:       r.ID,
-			DrawID:   r.DrawID,
-			Round:    r.Round,
-			Position: r.Position,
-			Name:     r.Name,
-			Seed:     r.Seed,
+			ID:        r.ID,
+			DrawID:    r.DrawID,
+			Round:     r.Round,
+			Position:  r.Position,
+			Name:      r.Name,
+			Seed:      r.Seed,
+			SetScores: setScores,
 		})
 	}
 	return result

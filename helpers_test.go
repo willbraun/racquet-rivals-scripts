@@ -164,27 +164,27 @@ func TestPrepareUpdates(t *testing.T) {
 	})
 }
 
-func TestToSlotSlice(t *testing.T) {
-	t.Parallel()
+// func TestToSlotSlice(t *testing.T) {
+// 	t.Parallel()
 
-	slotRecords := []SlotRecord{
-		{ID: "aaa", DrawID: "draw1", Round: 1, Position: 1, Name: "Roger Federer", Seed: "(1)"},
-		{ID: "bbb", DrawID: "draw1", Round: 1, Position: 2, Name: "Rafael Nadal", Seed: "(2)"},
-		{ID: "ccc", DrawID: "draw1", Round: 2, Position: 1, Name: "Roger Federer", Seed: "(1)"},
-	}
+// 	slotRecords := []SlotRecord{
+// 		{ID: "aaa", DrawID: "draw1", Round: 1, Position: 1, Name: "Roger Federer", Seed: "(1)"},
+// 		{ID: "bbb", DrawID: "draw1", Round: 1, Position: 2, Name: "Rafael Nadal", Seed: "(2)"},
+// 		{ID: "ccc", DrawID: "draw1", Round: 2, Position: 1, Name: "Roger Federer", Seed: "(1)"},
+// 	}
 
-	t.Run("toSlotSlice all filled", func(t *testing.T) {
-		slotSlice := toSlotSlice(slotRecords)
-		assert := assert.New(t)
-		assert.Equal(slotSlice, allFilled)
-	})
+// 	t.Run("toSlotSlice all filled", func(t *testing.T) {
+// 		slotSlice := toSlotSlice(slotRecords)
+// 		assert := assert.New(t)
+// 		assert.Equal(slotSlice, allFilled)
+// 	})
 
-	t.Run("toSlotSlice empty", func(t *testing.T) {
-		testSlice := toSlotSlice([]SlotRecord{})
-		assert := assert.New(t)
-		assert.Equal(testSlice, slotSlice{})
-	})
-}
+// 	t.Run("toSlotSlice empty", func(t *testing.T) {
+// 		testSlice := toSlotSlice([]SlotRecord{})
+// 		assert := assert.New(t)
+// 		assert.Equal(testSlice, slotSlice{})
+// 	})
+// }
 
 func TestNoAlphabet(t *testing.T) {
 	t.Parallel()

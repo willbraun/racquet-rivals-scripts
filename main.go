@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"log"
 	"os"
 	"strings"
@@ -22,7 +23,6 @@ type Slot struct {
 	Position  int
 	Name      string
 	Seed      string
-	Winner    bool
 	SetScores []SetScore
 }
 
@@ -55,35 +55,36 @@ func main() {
 	}
 
 	for _, draw := range draws {
-		currentSlots := toSlotSlice(getSlots(draw.ID, token))
-		var scrapedSlots slotSlice
-		var seeds map[string]string
+		currentSlots := getSlots(draw.ID, token)
+		fmt.Println(currentSlots)
+		// var scrapedSlots slotSlice
+		// var seeds map[string]string
 
-		if draw.Event == "Men's Singles" {
-			scrapedSlots, seeds = scrapeATP(draw)
-		} else if draw.Event == "Women's Singles" {
-			scrapedSlots, seeds = scrapeWTA(draw)
-		} else {
-			log.Println("Invalid event:", draw.Event)
-		}
+		// if draw.Event == "Men's Singles" {
+		// 	scrapedSlots, seeds = scrapeATP(draw)
+		// } else if draw.Event == "Women's Singles" {
+		// 	scrapedSlots, seeds = scrapeWTA(draw)
+		// } else {
+		// 	log.Println("Invalid event:", draw.Event)
+		// }
 
-		received := len(scrapedSlots)
-		expected := (draw.Size * 2) - 1
+		// received := len(scrapedSlots)
+		// expected := (draw.Size * 2) - 1
 
-		if received != expected {
-			log.Printf("Incorrect number of scraped slots for %s %s %d. Expected: %d, received: %d.",
-				draw.Name,
-				draw.Event,
-				draw.Year,
-				expected,
-				received)
-			continue
-		}
+		// if received != expected {
+		// 	log.Printf("Incorrect number of scraped slots for %s %s %d. Expected: %d, received: %d.",
+		// 		draw.Name,
+		// 		draw.Event,
+		// 		draw.Year,
+		// 		expected,
+		// 		received)
+		// 	continue
+		// }
 
-		newSlots := getNewSlots(scrapedSlots, currentSlots)
-		postSlots(newSlots, token)
+		// newSlots := getNewSlots(scrapedSlots, currentSlots)
+		// postSlots(newSlots, token)
 
-		updatedSlots := prepareUpdates(scrapedSlots, currentSlots, seeds)
-		updateSlots(updatedSlots, token)
+		// updatedSlots := prepareUpdates(scrapedSlots, currentSlots, seeds)
+		// updateSlots(updatedSlots, token)
 	}
 }

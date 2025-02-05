@@ -69,7 +69,7 @@ func TestScrapeWTA(t *testing.T) {
 		for _, slot := range scrapedSlots {
 			assert.NotEmpty(slot.Name)
 		}
-		
+
 		delete(seeds, "")
 		assert.Equal(len(seeds), 128)
 	})
