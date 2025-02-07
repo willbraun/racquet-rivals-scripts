@@ -55,18 +55,21 @@ func main() {
 	}
 
 	for _, draw := range draws {
-		currentSlots := getSlots(draw.ID, token)
-		fmt.Println(currentSlots)
-		// var scrapedSlots slotSlice
-		// var seeds map[string]string
+		// currentSlots := getSlots(draw.ID, token)
+		// fmt.Println(currentSlots)
+		var scrapedSlots slotSlice
+		var seeds map[string]string
 
-		// if draw.Event == "Men's Singles" {
-		// 	scrapedSlots, seeds = scrapeATP(draw)
-		// } else if draw.Event == "Women's Singles" {
-		// 	scrapedSlots, seeds = scrapeWTA(draw)
-		// } else {
-		// 	log.Println("Invalid event:", draw.Event)
-		// }
+		if draw.Event == "Men's Singles" {
+			scrapedSlots, seeds = scrapeATP(draw)
+		} else if draw.Event == "Women's Singles" {
+			scrapedSlots, seeds = scrapeWTA(draw)
+		} else {
+			log.Println("Invalid event:", draw.Event)
+		}
+
+		fmt.Println(scrapedSlots)
+		fmt.Println(seeds)
 
 		// received := len(scrapedSlots)
 		// expected := (draw.Size * 2) - 1

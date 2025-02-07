@@ -9,6 +9,7 @@ import (
 	"net/url"
 	"os"
 	"regexp"
+	"strconv"
 	"strings"
 
 	"github.com/PuerkitoBio/goquery"
@@ -75,12 +76,40 @@ func scrapeATP(draw DrawRecord) (slotSlice, map[string]string) {
 		round++
 		position := 1
 
-		players := rc.Find(".name")
-		players.Each(func(_ int, player *goquery.Selection) {
+		rawSlots := rc.Find(".stats-item")
+		rawSlots.Each(func(_ int, rawSlot *goquery.Selection) {
+			player := rawSlot.Find(".name")
 			name := trim(player.Find("a").Text())
 			seed := trim(player.Find("span").Text())
 
-			slots.add(Slot{DrawID: draw.ID, Round: round, Position: position, Name: name, Seed: seed})
+			setScores := []SetScore{}
+			sets := rawSlot.Find(".score-item")
+			sets.EachWithBreak(func(i int, set *goquery.Selection) bool {
+				scores := set.Find("span")
+				gamesStr := scores.Eq(0).Text()
+				tiebreakStr := scores.Eq(1).Text()
+
+				if gamesStr == "" {
+					return false
+				}
+
+				games, err := strconv.Atoi(gamesStr)
+				if err != nil {
+					log.Println("Error converting games to int:", err)
+				}
+				tiebreak := 0
+				if tiebreakStr != "" {
+					tiebreak, err = strconv.Atoi(tiebreakStr)
+					if err != nil {
+						log.Println("Error converting tiebreak to int:", err)
+					}
+				}
+
+				setScores = append(setScores, SetScore{Number: i + 1, Games: games, Tiebreak: tiebreak})
+				return true
+			})
+
+			slots.add(Slot{DrawID: draw.ID, Round: round, Position: position, Name: name, Seed: seed, SetScores: setScores})
 			seeds[name] = seed
 
 			position++
