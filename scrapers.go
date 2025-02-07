@@ -152,11 +152,24 @@ func scrapeWTA(draw DrawRecord) (slotSlice, map[string]string) {
 
 		matches := rc.Find(".tournament-draw__match-table")
 		matches.Each(func(_ int, match *goquery.Selection) {
-			rows := match.ChildrenMatcher(goquery.Single("table")).ChildrenMatcher(goquery.Single("tbody")).Children()
-			rows.Each(func(_ int, row *goquery.Selection) {
-				name, seed := wtaExtractName(row)
+			rawSlots := match.ChildrenMatcher(goquery.Single("table")).ChildrenMatcher(goquery.Single("tbody")).Children()
+			rawSlots.Each(func(_ int, rawSlot *goquery.Selection) {
+				name, seed := wtaExtractName(rawSlot)
 
-				slots.add(Slot{DrawID: draw.ID, Round: round, Position: position, Name: name, Seed: seed})
+				setScores := []SetScore{}
+				sets := rawSlot.Find(".match-table__score-cell")
+				sets.EachWithBreak(func(i int, set *goquery.Selection) bool {
+					gamesStr := trim(set.Text())
+					tiebreakStr := trim(set.Find(".match-table__tie-break").Text())
+					
+					log.Println(name, "games", gamesStr, "tb", tiebreakStr)
+
+					return true
+				})
+
+
+
+				slots.add(Slot{DrawID: draw.ID, Round: round, Position: position, Name: name, Seed: seed, SetScores: setScores})
 				seeds[name] = seed
 
 				position++
