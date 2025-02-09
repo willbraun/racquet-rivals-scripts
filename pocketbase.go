@@ -89,6 +89,13 @@ type CreateSlotRes struct {
 	Position int    `json:"position"`
 }
 
+type CreateUpdateSetScoreReq struct {
+	DrawSlotID string `json:"draw_slot_id"`
+	Number     int    `json:"number"`
+	Games      int    `json:"games"`
+	Tiebreak   int    `json:"tiebreak"`
+}
+
 func makeHTTPRequest(method, url, token string, requestData interface{}) (*http.Response, error) {
 	body, err := json.Marshal(requestData)
 	if err != nil {

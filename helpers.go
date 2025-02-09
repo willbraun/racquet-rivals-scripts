@@ -74,61 +74,89 @@ func getSlotKey(s Slot) string {
 	return fmt.Sprintf("%d.%d", s.Round, s.Position)
 }
 
-func getNewSlots(scraped slotSlice, current slotSlice) slotSlice {
-	currentMap := make(map[string]bool)
-	for _, slot := range current {
-		key := getSlotKey(slot)
-		currentMap[key] = true
-	}
+func getUpdates(scraped slotSlice, current slotSlice, seeds map[string]string) (slotSlice, slotSlice, []CreateUpdateSetScoreReq, []CreateUpdateSetScoreReq) {
+	scrapedMap := make(map[string]Slot)
+	currentMap := make(map[string]Slot)
+	allKeys := make(map[string]bool)
 
-	result := slotSlice{}
 	for _, slot := range scraped {
 		key := getSlotKey(slot)
-		if !currentMap[key] {
-			result.add(slot)
+		scrapedMap[key] = slot
+		allKeys[key] = true
+	}
+
+	for _, slot := range current {
+		key := getSlotKey(slot)
+		currentMap[key] = slot
+		allKeys[key] = true
+	}
+
+	newSlots := slotSlice{}
+	updatedSlots := slotSlice{}
+	newSets := []CreateUpdateSetScoreReq{}
+	updatedSets := []CreateUpdateSetScoreReq{}
+
+	for key := range allKeys {
+		scrapedSlot, scrapedExists := scrapedMap[key]
+		currentSlot, currentExists := currentMap[key]
+
+		if !currentExists {
+			newSlots.add(scrapedSlot)
+			continue
 		}
-	}
 
-	return result
-}
+		if !scrapedExists {
+			continue
+		}
 
-func prepareUpdates(scraped slotSlice, current slotSlice, seeds map[string]string) slotSlice {
-	scrapedMap := make(map[string]string)
-	for _, slot := range scraped {
-		key := getSlotKey(slot)
-		scrapedMap[key] = slot.Name
-	}
+		for j, scrapedSetScore := range scrapedSlot.SetScores {
+			if j < len(currentSlot.SetScores) {
+				currentSetScore := currentSlot.SetScores[j]
+				if !reflect.DeepEqual(scrapedSetScore, currentSetScore) {
+					updatedSets = append(updatedSets, CreateUpdateSetScoreReq{
+						DrawSlotID: currentSlot.ID,
+						Number: scrapedSetScore.Number,
+						Games: scrapedSetScore.Games,
+						Tiebreak: scrapedSetScore.Tiebreak,
+					})
+				}
+			} else {
+				newSets = append(newSets, CreateUpdateSetScoreReq{
+					DrawSlotID: currentSlot.ID,
+					Number: scrapedSetScore.Number,
+					Games: scrapedSetScore.Games,
+					Tiebreak: scrapedSetScore.Tiebreak,
+				})
+			}
+		}
 
-	result := slotSlice{}
-	for _, slot := range current {
-		key := getSlotKey(slot)
-		newName := scrapedMap[key]
+		newName := scrapedSlot.Name
 		newSeed := seeds[newName]
 
-		// don't clear slots with existing data
+		// Don't clear slots with existing name
 		if newName == "" {
 			continue
 		}
 
-		// no update needed
-		if newName == slot.Name && newSeed == slot.Seed {
+		// No update needed
+		if newName == currentSlot.Name && newSeed == currentSlot.Seed {
 			continue
 		}
 
-		slot.Name = newName
-		slot.Seed = newSeed
-		result.add(slot)
+		updatedSlot := currentSlot
+		updatedSlot.Name = newName
+		updatedSlot.Seed = newSeed
+		updatedSlots.add(updatedSlot)
 	}
 
-	return result
+	return newSlots, updatedSlots, newSets, updatedSets
 }
 
 // Example usage:
 // err:= saveHTMLToFile(html, "scraped_pages/wtaRendered.html")
-//
-//	if err != nil {
-//		log.Println("Error saving HTML to file:", err)
-//	}
+// if err != nil {
+//   log.Println("Error saving HTML to file:", err)
+// }
 func saveHTMLToFile(html, filename string) error {
 	return os.WriteFile(filename, []byte(html), 0644)
 }

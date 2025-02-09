@@ -55,8 +55,7 @@ func main() {
 	}
 
 	for _, draw := range draws {
-		// currentSlots := getSlots(draw.ID, token)
-		// fmt.Println(currentSlots)
+		currentSlots := getSlots(draw.ID, token)
 		var scrapedSlots slotSlice
 		var seeds map[string]string
 
@@ -68,26 +67,28 @@ func main() {
 			log.Println("Invalid event:", draw.Event)
 		}
 
-		fmt.Println(scrapedSlots)
-		fmt.Println(seeds)
+		received := len(scrapedSlots)
+		expected := (draw.Size * 2) - 1
 
-		// received := len(scrapedSlots)
-		// expected := (draw.Size * 2) - 1
-
-		// if received != expected {
-		// 	log.Printf("Incorrect number of scraped slots for %s %s %d. Expected: %d, received: %d.",
-		// 		draw.Name,
-		// 		draw.Event,
-		// 		draw.Year,
-		// 		expected,
-		// 		received)
-		// 	continue
-		// }
+		if received != expected {
+			log.Printf("Incorrect number of scraped slots for %s %s %d. Expected: %d, received: %d.",
+				draw.Name,
+				draw.Event,
+				draw.Year,
+				expected,
+				received)
+			continue
+		}
 
 		// newSlots := getNewSlots(scrapedSlots, currentSlots)
-		// postSlots(newSlots, token)
+		
+		newSlots, updatedSlots, newSets, updatedSets := getUpdates(scrapedSlots, currentSlots, seeds)
+		fmt.Println("newSlots", newSlots)
+		fmt.Println("updatedSlots", updatedSlots)
+		fmt.Println("newSets", newSets)
+		fmt.Println("updatedSets", updatedSets)
 
-		// updatedSlots := prepareUpdates(scrapedSlots, currentSlots, seeds)
+		// postSlots(newSlots, token)
 		// updateSlots(updatedSlots, token)
 	}
 }

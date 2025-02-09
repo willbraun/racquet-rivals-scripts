@@ -63,7 +63,6 @@ func TestScrapeWTA(t *testing.T) {
 
 	t.Run("Scrape WTA", func(t *testing.T) {
 		scrapedSlots, seeds := scrapeWTA(draw)
-		log.Println(scrapedSlots)
 		assert := assert.New(t)
 
 		assert.Equal(len(scrapedSlots), 255)

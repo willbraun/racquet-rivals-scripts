@@ -34,8 +34,8 @@ func scrapeWithProxy(targetURL string) string {
 
 	req, err := http.NewRequest("GET", targetURL, nil)
 	if err != nil {
-			log.Println("Error creating request:", err)
-			return ""
+		log.Println("Error creating request:", err)
+		return ""
 	}
 
 	// Bright Data header to wait for is-winner class to appear
@@ -52,13 +52,13 @@ func scrapeWithProxy(targetURL string) string {
 		printWithTimestamp("Attempt:", i+1)
 		resp, err := client.Do(req)
 		if err != nil || resp.StatusCode != 200 {
-				log.Println(fmt.Sprintf("Error making request - %s:", targetURL), err)
-				if i < maxRetries-1 {
-						time.Sleep(backoff)
-						backoff *= 2
-						continue
-				}
-				return ""
+			log.Println(fmt.Sprintf("Error making request - %s:", targetURL), err)
+			if i < maxRetries-1 {
+				time.Sleep(backoff)
+				backoff *= 2
+				continue
+			}
+			return ""
 		}
 		defer resp.Body.Close()
 
@@ -70,9 +70,9 @@ func scrapeWithProxy(targetURL string) string {
 
 		printWithTimestamp("Finished scraping:", targetURL)
 		return string(body)
-  }
+	}
 
-  return ""
+	return ""
 }
 
 func scrapeATP(draw DrawRecord) (slotSlice, map[string]string) {
@@ -123,6 +123,7 @@ func scrapeATP(draw DrawRecord) (slotSlice, map[string]string) {
 				if err != nil {
 					log.Println("Error converting games to int:", err)
 				}
+
 				tiebreak := 0
 				if tiebreakStr != "" {
 					tiebreak, err = strconv.Atoi(tiebreakStr)
@@ -132,6 +133,7 @@ func scrapeATP(draw DrawRecord) (slotSlice, map[string]string) {
 				}
 
 				setScores = append(setScores, SetScore{Number: i + 1, Games: games, Tiebreak: tiebreak})
+
 				return true
 			})
 
@@ -186,7 +188,7 @@ func scrapeWTA(draw DrawRecord) (slotSlice, map[string]string) {
 				sets := rawSlot.Find(".match-table__score-cell")
 				sets.EachWithBreak(func(i int, set *goquery.Selection) bool {
 					fields := strings.Fields(set.Text())
-					
+
 					if fields[0] == "-" {
 						return false
 					}
@@ -203,7 +205,7 @@ func scrapeWTA(draw DrawRecord) (slotSlice, map[string]string) {
 							log.Println("Error converting tiebreak to int:", err)
 						}
 					}
-	
+
 					setScores = append(setScores, SetScore{Number: i + 1, Games: games, Tiebreak: tiebreak})
 
 					return true
