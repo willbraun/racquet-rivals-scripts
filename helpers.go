@@ -5,6 +5,7 @@ import (
 	"os"
 	"reflect"
 	"regexp"
+	"sort"
 	"strings"
 	"time"
 )
@@ -91,24 +92,44 @@ func getUpdates(scraped slotSlice, current slotSlice, seeds map[string]string) (
 		allKeys[key] = true
 	}
 
+	keys := []string{}
+	for k := range allKeys {
+		keys = append(keys, k)
+	}
+
+	// Sort keys to ensure consistent order for unit tests
+	// Sorting by string is fine as the order of API calls doesn't matter
+	sort.Strings(keys) 
+
 	newSlots := slotSlice{}
 	updatedSlots := slotSlice{}
 	newSets := []CreateUpdateSetScoreReq{}
 	updatedSets := []CreateUpdateSetScoreReq{}
 
-	for key := range allKeys {
+	for _, key := range keys {
 		scrapedSlot, scrapedExists := scrapedMap[key]
 		currentSlot, currentExists := currentMap[key]
 
+		// New slot
 		if !currentExists {
 			newSlots.add(scrapedSlot)
+			for _, setScore := range scrapedSlot.SetScores {
+				newSets = append(newSets, CreateUpdateSetScoreReq{
+					DrawSlotID: scrapedSlot.ID,
+					Number: setScore.Number,
+					Games: setScore.Games,
+					Tiebreak: setScore.Tiebreak,
+				})
+			}
 			continue
 		}
 
+		// Existing slot isn't scraped
 		if !scrapedExists {
 			continue
 		}
 
+		// Update set scores
 		for j, scrapedSetScore := range scrapedSlot.SetScores {
 			if j < len(currentSlot.SetScores) {
 				currentSetScore := currentSlot.SetScores[j]
@@ -121,6 +142,7 @@ func getUpdates(scraped slotSlice, current slotSlice, seeds map[string]string) (
 					})
 				}
 			} else {
+				// Add new set score
 				newSets = append(newSets, CreateUpdateSetScoreReq{
 					DrawSlotID: currentSlot.ID,
 					Number: scrapedSetScore.Number,
@@ -143,10 +165,7 @@ func getUpdates(scraped slotSlice, current slotSlice, seeds map[string]string) (
 			continue
 		}
 
-		updatedSlot := currentSlot
-		updatedSlot.Name = newName
-		updatedSlot.Seed = newSeed
-		updatedSlots.add(updatedSlot)
+		updatedSlots.add(scrapedSlot)
 	}
 
 	return newSlots, updatedSlots, newSets, updatedSets
