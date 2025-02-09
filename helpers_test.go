@@ -21,7 +21,9 @@ var allFilledPartialSets = slotSlice{
 	Slot{ID: "aaa", DrawID: "draw1", Round: 1, Position: 1, Name: "Roger Federer", Seed: "(1)", SetScores: []SetScore{
 		{Number: 1, Games: 4, Tiebreak: 0},
 	}},
-	Slot{ID: "bbb", DrawID: "draw1", Round: 1, Position: 2, Name: "Rafael Nadal", Seed: "(2)", SetScores: []SetScore{}},
+	Slot{ID: "bbb", DrawID: "draw1", Round: 1, Position: 2, Name: "Rafael Nadal", Seed: "(2)", SetScores: []SetScore{
+		{Number: 1, Games: 2, Tiebreak: 0},
+	}},
 	Slot{ID: "ccc", DrawID: "draw1", Round: 2, Position: 1, Name: "Roger Federer", Seed: "(1)", SetScores: []SetScore{}},
 }
 
@@ -135,13 +137,13 @@ func TestGetUpdates(t *testing.T) {
 		assert.Equal(updatedSlots, slotSlice{})
 		assert.Equal(newSets, []CreateUpdateSetScoreReq{
 			{DrawSlotID: "aaa", Number: 2, Games: 6, Tiebreak: 0},
-			{DrawSlotID: "bbb", Number: 1, Games: 6, Tiebreak: 0},
 			{DrawSlotID: "bbb", Number: 2, Games: 6, Tiebreak: 0},
 			{DrawSlotID: "ccc", Number: 1, Games: 6, Tiebreak: 0},
 			{DrawSlotID: "ccc", Number: 2, Games: 6, Tiebreak: 0},
 		})
 		assert.Equal(updatedSets, []CreateUpdateSetScoreReq{
 			{DrawSlotID: "aaa", Number: 1, Games: 6, Tiebreak: 0},
+			{DrawSlotID: "bbb", Number: 1, Games: 6, Tiebreak: 0},
 		})
 	})
 
