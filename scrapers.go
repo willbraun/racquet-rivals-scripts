@@ -16,7 +16,7 @@ import (
 	"github.com/PuerkitoBio/goquery"
 )
 
-func scrapeWithProxy(targetURL string, options ...bool) string {
+func scrapeWithProxy(targetURL string) string {
 	printWithTimestamp("Visiting:", targetURL)
 
 	proxyURL, err := url.Parse(os.Getenv("PROXY_URL"))
@@ -38,14 +38,9 @@ func scrapeWithProxy(targetURL string, options ...bool) string {
 			return ""
 	}
 
-	expectIsWinner := false
-	if len(options) > 0 {
-		expectIsWinner = options[0]
-	}
-
 	// Bright Data header to wait for is-winner class to appear
 	// Used for WTA draws to indicate that scores have loaded
-	if expectIsWinner {
+	if strings.Contains(targetURL, "wtatennis.com") && strings.Contains(targetURL, "draws") {
 		req.Header.Set("x-unblock-expect", "{\"element\": \".is-winner\"}")
 	}
 
@@ -160,7 +155,7 @@ func scrapeWTA(draw DrawRecord) (slotSlice, map[string]string) {
 	slots := slotSlice{}
 	seeds := make(map[string]string)
 
-	// html := scrapeWithProxy(draw.Url, true)
+	// html := scrapeWithProxy(draw.Url)
 	html, err := readHTMLFromFile("scraped_pages/wtaRendered.html")
 	if err != nil {
 		log.Println("Error reading HTML from WTA file:", err)
