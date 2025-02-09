@@ -123,6 +123,12 @@ func prepareUpdates(scraped slotSlice, current slotSlice, seeds map[string]strin
 	return result
 }
 
+// Example usage:
+// err:= saveHTMLToFile(html, "scraped_pages/wtaRendered.html")
+//
+//	if err != nil {
+//		log.Println("Error saving HTML to file:", err)
+//	}
 func saveHTMLToFile(html, filename string) error {
 	return os.WriteFile(filename, []byte(html), 0644)
 }

@@ -11,11 +11,12 @@ import (
 	"regexp"
 	"strconv"
 	"strings"
+	"time"
 
 	"github.com/PuerkitoBio/goquery"
 )
 
-func scrapeWithProxy(targetURL string) string {
+func scrapeWithProxy(targetURL string, options ...bool) string {
 	printWithTimestamp("Visiting:", targetURL)
 
 	proxyURL, err := url.Parse(os.Getenv("PROXY_URL"))
@@ -31,22 +32,52 @@ func scrapeWithProxy(targetURL string) string {
 		},
 	}
 
-	resp, err := client.Get(targetURL)
+	req, err := http.NewRequest("GET", targetURL, nil)
 	if err != nil {
-		log.Println(fmt.Sprintf("Error making request - %s:", targetURL), err)
-		return ""
-	}
-	defer resp.Body.Close()
-
-	body, err := io.ReadAll(resp.Body)
-	if err != nil {
-		log.Println(fmt.Sprintf("Error reading response body - %s:", targetURL), err)
-		return ""
+			log.Println("Error creating request:", err)
+			return ""
 	}
 
-	printWithTimestamp("Finished scraping:", targetURL)
+	expectIsWinner := false
+	if len(options) > 0 {
+		expectIsWinner = options[0]
+	}
 
-	return string(body)
+	// Bright Data header to wait for is-winner class to appear
+	// Used for WTA draws to indicate that scores have loaded
+	if expectIsWinner {
+		req.Header.Set("x-unblock-expect", "{\"element\": \".is-winner\"}")
+	}
+
+	// Exponential backoff retry mechanism
+	maxRetries := 5
+	backoff := time.Second
+
+	for i := 0; i < maxRetries; i++ {
+		printWithTimestamp("Attempt:", i+1)
+		resp, err := client.Do(req)
+		if err != nil || resp.StatusCode != 200 {
+				log.Println(fmt.Sprintf("Error making request - %s:", targetURL), err)
+				if i < maxRetries-1 {
+						time.Sleep(backoff)
+						backoff *= 2
+						continue
+				}
+				return ""
+		}
+		defer resp.Body.Close()
+
+		body, err := io.ReadAll(resp.Body)
+		if err != nil {
+			log.Println(fmt.Sprintf("Error reading response body - %s:", targetURL), err)
+			return ""
+		}
+
+		printWithTimestamp("Finished scraping:", targetURL)
+		return string(body)
+  }
+
+  return ""
 }
 
 func scrapeATP(draw DrawRecord) (slotSlice, map[string]string) {
@@ -129,8 +160,8 @@ func scrapeWTA(draw DrawRecord) (slotSlice, map[string]string) {
 	slots := slotSlice{}
 	seeds := make(map[string]string)
 
-	// html := scrapeWithProxy(draw.Url)
-	html, err := readHTMLFromFile("scraped_pages/wta.html")
+	// html := scrapeWithProxy(draw.Url, true)
+	html, err := readHTMLFromFile("scraped_pages/wtaRendered.html")
 	if err != nil {
 		log.Println("Error reading HTML from WTA file:", err)
 		return slots, seeds
@@ -166,8 +197,6 @@ func scrapeWTA(draw DrawRecord) (slotSlice, map[string]string) {
 
 					return true
 				})
-
-
 
 				slots.add(Slot{DrawID: draw.ID, Round: round, Position: position, Name: name, Seed: seed, SetScores: setScores})
 				seeds[name] = seed
