@@ -37,21 +37,25 @@ func (ss *slotSlice) add(s Slot) {
 
 func toSlotSlice(sr []SlotRecord) slotSlice {
 	result := slotSlice{}
-	for _, r := range sr {
+	for _, record := range sr {
 		setScores := []SetScore{}
 
 		for i := 1; i <= 5; i++ {
+			idField := fmt.Sprintf("Set%dID", i)
 			gamesField := fmt.Sprintf("Set%dGames", i)
 			tiebreakField := fmt.Sprintf("Set%dTiebreak", i)
 
-			gamesValue := reflect.ValueOf(r).FieldByName(gamesField)
-			tiebreakValue := reflect.ValueOf(r).FieldByName(tiebreakField)
+			idValue := reflect.ValueOf(record).FieldByName(idField)
+			gamesValue := reflect.ValueOf(record).FieldByName(gamesField)
+			tiebreakValue := reflect.ValueOf(record).FieldByName(tiebreakField)
 
 			if gamesValue.IsValid() && !gamesValue.IsNil() {
 				setScores = append(setScores, SetScore{
-					Number:   i,
-					Games:    *gamesValue.Interface().(*int),
-					Tiebreak: *tiebreakValue.Interface().(*int),
+					ID:         idValue.String(),
+					DrawSlotID: record.ID,
+					Number:     i,
+					Games:      *gamesValue.Interface().(*int),
+					Tiebreak:   *tiebreakValue.Interface().(*int),
 				})
 			} else {
 				break
@@ -59,12 +63,12 @@ func toSlotSlice(sr []SlotRecord) slotSlice {
 		}
 
 		result.add(Slot{
-			ID:        r.ID,
-			DrawID:    r.DrawID,
-			Round:     r.Round,
-			Position:  r.Position,
-			Name:      r.Name,
-			Seed:      r.Seed,
+			ID:        record.ID,
+			DrawID:    record.DrawID,
+			Round:     record.Round,
+			Position:  record.Position,
+			Name:      record.Name,
+			Seed:      record.Seed,
 			SetScores: setScores,
 		})
 	}
@@ -75,7 +79,7 @@ func getSlotKey(s Slot) string {
 	return fmt.Sprintf("%d.%d", s.Round, s.Position)
 }
 
-func getUpdates(scraped slotSlice, current slotSlice, seeds map[string]string) (slotSlice, slotSlice, []CreateUpdateSetScoreReq, []CreateUpdateSetScoreReq) {
+func getUpdates(scraped slotSlice, current slotSlice, seeds map[string]string) (slotSlice, slotSlice, []SetScore, []SetScore) {
 	scrapedMap := make(map[string]Slot)
 	currentMap := make(map[string]Slot)
 	allKeys := make(map[string]bool)
@@ -99,12 +103,12 @@ func getUpdates(scraped slotSlice, current slotSlice, seeds map[string]string) (
 
 	// Sort keys to ensure consistent order for unit tests
 	// Sorting by string is fine as the order of API calls doesn't matter
-	sort.Strings(keys) 
+	sort.Strings(keys)
 
 	newSlots := slotSlice{}
 	updatedSlots := slotSlice{}
-	newSets := []CreateUpdateSetScoreReq{}
-	updatedSets := []CreateUpdateSetScoreReq{}
+	newSets := []SetScore{}
+	updatedSets := []SetScore{}
 
 	for _, key := range keys {
 		scrapedSlot, scrapedExists := scrapedMap[key]
@@ -114,11 +118,11 @@ func getUpdates(scraped slotSlice, current slotSlice, seeds map[string]string) (
 		if !currentExists {
 			newSlots.add(scrapedSlot)
 			for _, setScore := range scrapedSlot.SetScores {
-				newSets = append(newSets, CreateUpdateSetScoreReq{
+				newSets = append(newSets, SetScore{
 					DrawSlotID: scrapedSlot.ID,
-					Number: setScore.Number,
-					Games: setScore.Games,
-					Tiebreak: setScore.Tiebreak,
+					Number:     setScore.Number,
+					Games:      setScore.Games,
+					Tiebreak:   setScore.Tiebreak,
 				})
 			}
 			continue
@@ -134,20 +138,21 @@ func getUpdates(scraped slotSlice, current slotSlice, seeds map[string]string) (
 			if j < len(currentSlot.SetScores) {
 				currentSetScore := currentSlot.SetScores[j]
 				if !reflect.DeepEqual(scrapedSetScore, currentSetScore) {
-					updatedSets = append(updatedSets, CreateUpdateSetScoreReq{
+					updatedSets = append(updatedSets, SetScore{
+						ID:         currentSetScore.ID,
 						DrawSlotID: currentSlot.ID,
-						Number: scrapedSetScore.Number,
-						Games: scrapedSetScore.Games,
-						Tiebreak: scrapedSetScore.Tiebreak,
+						Number:     scrapedSetScore.Number,
+						Games:      scrapedSetScore.Games,
+						Tiebreak:   scrapedSetScore.Tiebreak,
 					})
 				}
 			} else {
 				// Add new set score
-				newSets = append(newSets, CreateUpdateSetScoreReq{
+				newSets = append(newSets, SetScore{
 					DrawSlotID: currentSlot.ID,
-					Number: scrapedSetScore.Number,
-					Games: scrapedSetScore.Games,
-					Tiebreak: scrapedSetScore.Tiebreak,
+					Number:     scrapedSetScore.Number,
+					Games:      scrapedSetScore.Games,
+					Tiebreak:   scrapedSetScore.Tiebreak,
 				})
 			}
 		}
@@ -173,9 +178,10 @@ func getUpdates(scraped slotSlice, current slotSlice, seeds map[string]string) (
 
 // Example usage:
 // err:= saveHTMLToFile(html, "scraped_pages/wtaRendered.html")
-// if err != nil {
-//   log.Println("Error saving HTML to file:", err)
-// }
+//
+//	if err != nil {
+//	  log.Println("Error saving HTML to file:", err)
+//	}
 func saveHTMLToFile(html, filename string) error {
 	return os.WriteFile(filename, []byte(html), 0644)
 }

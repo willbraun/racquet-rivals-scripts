@@ -1,7 +1,6 @@
 package main
 
 import (
-	"fmt"
 	"log"
 	"os"
 	"strings"
@@ -11,9 +10,11 @@ import (
 )
 
 type SetScore struct {
-	Number   int
-	Games    int
-	Tiebreak int
+	ID         string
+	DrawSlotID string
+	Number     int
+	Games      int
+	Tiebreak   int
 }
 
 type Slot struct {
@@ -80,15 +81,15 @@ func main() {
 			continue
 		}
 
-		// newSlots := getNewSlots(scrapedSlots, currentSlots)
-		
 		newSlots, updatedSlots, newSets, updatedSets := getUpdates(scrapedSlots, currentSlots, seeds)
-		fmt.Println("newSlots", newSlots)
-		fmt.Println("updatedSlots", updatedSlots)
-		fmt.Println("newSets", newSets)
-		fmt.Println("updatedSets", updatedSets)
+		// fmt.Println("newSlots", newSlots)
+		// fmt.Println("updatedSlots", updatedSlots)
+		// fmt.Println("newSets", newSets)
+		// fmt.Println("updatedSets", updatedSets)
 
-		// postSlots(newSlots, token)
-		// updateSlots(updatedSlots, token)
+		postSlots(newSlots, token)
+		updateSlots(updatedSlots, token)
+		postSets(newSets, token)
+		updateSets(updatedSets, token)
 	}
 }

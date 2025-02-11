@@ -52,14 +52,19 @@ type SlotRecord struct {
 	Position     int    `json:"position"`
 	Name         string `json:"name"`
 	Seed         string `json:"seed"`
+	Set1ID			 string `json:"set1_id"`
 	Set1Games    *int   `json:"set1_games"`
 	Set1Tiebreak *int   `json:"set1_tiebreak"`
+	Set2ID			 string `json:"set2_id"`
 	Set2Games    *int   `json:"set2_games"`
 	Set2Tiebreak *int   `json:"set2_tiebreak"`
+	Set3ID			 string `json:"set3_id"`
 	Set3Games    *int   `json:"set3_games"`
 	Set3Tiebreak *int   `json:"set3_tiebreak"`
+	Set4ID			 string `json:"set4_id"`
 	Set4Games    *int   `json:"set4_games"`
 	Set4Tiebreak *int   `json:"set4_tiebreak"`
+	Set5ID			 string `json:"set5_id"`
 	Set5Games    *int   `json:"set5_games"`
 	Set5Tiebreak *int   `json:"set5_tiebreak"`
 }
@@ -231,5 +236,52 @@ func updateSlots(slots slotSlice, token string) {
 		defer res.Body.Close()
 
 		printWithTimestamp(res.Status, "updated", slot)
+	}
+}
+
+func postSets(setScores []SetScore, token string) {
+	if len(setScores) == 0 {
+		return
+	}
+
+	url := fmt.Sprintf(`%s/api/collections/set_score/records`, os.Getenv("BASE_URL"))
+
+	for _, setScore := range setScores {
+		requestData := CreateUpdateSetScoreReq{
+			DrawSlotID: setScore.DrawSlotID,
+			Number:     setScore.Number,
+			Games:      setScore.Games,
+			Tiebreak:   setScore.Tiebreak,
+		}
+		res, err := makeHTTPRequest("POST", url, token, requestData)
+		if err != nil {
+			log.Println(err)
+		}
+		defer res.Body.Close()
+
+		printWithTimestamp(res.Status, "added", setScore)
+	}
+}
+
+func updateSets(setScores []SetScore, token string) {
+	if len(setScores) == 0 {
+		return
+	}
+
+	for _, setScore := range setScores {
+		url := fmt.Sprintf(`%s/api/collections/set_score/records/%s`, os.Getenv("BASE_URL"), setScore.ID)
+		requestData := CreateUpdateSetScoreReq{
+			DrawSlotID: setScore.DrawSlotID,
+			Number:     setScore.Number,
+			Games:      setScore.Games,
+			Tiebreak:   setScore.Tiebreak,
+		}
+		res, err := makeHTTPRequest("PATCH", url, token, requestData)
+		if err != nil {
+			log.Println(err)
+		}
+		defer res.Body.Close()
+
+		printWithTimestamp(res.Status, "updated", setScore)
 	}
 }
