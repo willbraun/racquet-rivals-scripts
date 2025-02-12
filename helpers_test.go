@@ -29,10 +29,10 @@ var allFilled = slotSlice{
 
 var allFilledPartialSets = slotSlice{
 	Slot{ID: "aaa", DrawID: "draw1", Round: 1, Position: 1, Name: "Roger Federer", Seed: "(1)", SetScores: []SetScore{
-		{ID: "ss_a_1", Number: 1, Games: 4, Tiebreak: 0},
+		{ID: "ss_a_1", DrawSlotID: "aaa", Number: 1, Games: 4, Tiebreak: 0},
 	}},
 	Slot{ID: "bbb", DrawID: "draw1", Round: 1, Position: 2, Name: "Rafael Nadal", Seed: "(2)", SetScores: []SetScore{
-		{ID: "ss_b_1", Number: 1, Games: 2, Tiebreak: 0},
+		{ID: "ss_b_1", DrawSlotID: "bbb", Number: 1, Games: 2, Tiebreak: 0},
 	}},
 	Slot{ID: "ccc", DrawID: "draw1", Round: 2, Position: 1, Name: "Roger Federer", Seed: "(1)", SetScores: []SetScore{}},
 }
@@ -92,12 +92,12 @@ func TestGetUpdates(t *testing.T) {
 		})
 		assert.Equal(updatedSlots, slotSlice{})
 		assert.Equal(newSets, []SetScore{
-				{ID: "", DrawSlotID: "aaa", Number: 1, Games: 6, Tiebreak: 0},
-				{ID: "", DrawSlotID: "aaa", Number: 2, Games: 6, Tiebreak: 0},
-				{ID: "", DrawSlotID: "bbb", Number: 1, Games: 6, Tiebreak: 0},
-				{ID: "", DrawSlotID: "bbb", Number: 2, Games: 6, Tiebreak: 0},
-				{ID: "", DrawSlotID: "ccc", Number: 1, Games: 6, Tiebreak: 0},
-				{ID: "", DrawSlotID: "ccc", Number: 2, Games: 6, Tiebreak: 0},
+			{ID: "", DrawSlotID: "aaa", Number: 1, Games: 6, Tiebreak: 0},
+			{ID: "", DrawSlotID: "aaa", Number: 2, Games: 6, Tiebreak: 0},
+			{ID: "", DrawSlotID: "bbb", Number: 1, Games: 6, Tiebreak: 0},
+			{ID: "", DrawSlotID: "bbb", Number: 2, Games: 6, Tiebreak: 0},
+			{ID: "", DrawSlotID: "ccc", Number: 1, Games: 6, Tiebreak: 0},
+			{ID: "", DrawSlotID: "ccc", Number: 2, Games: 6, Tiebreak: 0},
 		})
 		assert.Equal(updatedSets, []SetScore{})
 	})
@@ -119,8 +119,8 @@ func TestGetUpdates(t *testing.T) {
 		assert.Equal(newSlots, slotSlice{})
 		assert.Equal(updatedSlots, slotSlice{})
 		assert.Equal(newSets, []SetScore{
-				{ID: "", DrawSlotID: "ccc", Number: 1, Games: 6, Tiebreak: 0},
-				{ID: "", DrawSlotID: "ccc", Number: 2, Games: 6, Tiebreak: 0},
+			{ID: "", DrawSlotID: "ccc", Number: 1, Games: 6, Tiebreak: 0},
+			{ID: "", DrawSlotID: "ccc", Number: 2, Games: 6, Tiebreak: 0},
 		})
 		assert.Equal(updatedSets, []SetScore{})
 	})
@@ -133,8 +133,8 @@ func TestGetUpdates(t *testing.T) {
 			Slot{ID: "ccc", DrawID: "draw1", Round: 2, Position: 1, Name: "Roger Federer", Seed: "(1)", SetScores: setScoresC},
 		})
 		assert.Equal(newSets, []SetScore{
-				{ID: "", DrawSlotID: "ccc", Number: 1, Games: 6, Tiebreak: 0},
-				{ID: "", DrawSlotID: "ccc", Number: 2, Games: 6, Tiebreak: 0},
+			{ID: "", DrawSlotID: "ccc", Number: 1, Games: 6, Tiebreak: 0},
+			{ID: "", DrawSlotID: "ccc", Number: 2, Games: 6, Tiebreak: 0},
 		})
 		assert.Equal(updatedSets, []SetScore{})
 	})
@@ -145,14 +145,14 @@ func TestGetUpdates(t *testing.T) {
 		assert.Equal(newSlots, slotSlice{})
 		assert.Equal(updatedSlots, slotSlice{})
 		assert.Equal(newSets, []SetScore{
-				{ID: "", DrawSlotID: "aaa", Number: 2, Games: 6, Tiebreak: 0},
-				{ID: "", DrawSlotID: "bbb", Number: 2, Games: 6, Tiebreak: 0},
-				{ID: "", DrawSlotID: "ccc", Number: 1, Games: 6, Tiebreak: 0},
-				{ID: "", DrawSlotID: "ccc", Number: 2, Games: 6, Tiebreak: 0},
+			{ID: "", DrawSlotID: "aaa", Number: 2, Games: 6, Tiebreak: 0},
+			{ID: "", DrawSlotID: "bbb", Number: 2, Games: 6, Tiebreak: 0},
+			{ID: "", DrawSlotID: "ccc", Number: 1, Games: 6, Tiebreak: 0},
+			{ID: "", DrawSlotID: "ccc", Number: 2, Games: 6, Tiebreak: 0},
 		})
 		assert.Equal(updatedSets, []SetScore{
-				{ID: "ss_a_1", DrawSlotID: "aaa", Number: 1, Games: 6, Tiebreak: 0},
-				{ID: "ss_b_1", DrawSlotID: "bbb", Number: 1, Games: 6, Tiebreak: 0},
+			{ID: "ss_a_1", DrawSlotID: "aaa", Number: 1, Games: 6, Tiebreak: 0},
+			{ID: "ss_b_1", DrawSlotID: "bbb", Number: 1, Games: 6, Tiebreak: 0},
 		})
 	})
 
@@ -166,12 +166,12 @@ func TestGetUpdates(t *testing.T) {
 			Slot{ID: "ccc", DrawID: "draw1", Round: 2, Position: 1, Name: "Roger Federer", Seed: "(1)", SetScores: setScoresC},
 		})
 		assert.Equal(newSets, []SetScore{
-				{ID: "", DrawSlotID: "aaa", Number: 1, Games: 6, Tiebreak: 0},
-				{ID: "", DrawSlotID: "aaa", Number: 2, Games: 6, Tiebreak: 0},
-				{ID: "", DrawSlotID: "bbb", Number: 1, Games: 6, Tiebreak: 0},
-				{ID: "", DrawSlotID: "bbb", Number: 2, Games: 6, Tiebreak: 0},
-				{ID: "", DrawSlotID: "ccc", Number: 1, Games: 6, Tiebreak: 0},
-				{ID: "", DrawSlotID: "ccc", Number: 2, Games: 6, Tiebreak: 0},
+			{ID: "", DrawSlotID: "aaa", Number: 1, Games: 6, Tiebreak: 0},
+			{ID: "", DrawSlotID: "aaa", Number: 2, Games: 6, Tiebreak: 0},
+			{ID: "", DrawSlotID: "bbb", Number: 1, Games: 6, Tiebreak: 0},
+			{ID: "", DrawSlotID: "bbb", Number: 2, Games: 6, Tiebreak: 0},
+			{ID: "", DrawSlotID: "ccc", Number: 1, Games: 6, Tiebreak: 0},
+			{ID: "", DrawSlotID: "ccc", Number: 2, Games: 6, Tiebreak: 0},
 		})
 		assert.Equal(updatedSets, []SetScore{})
 	})
@@ -219,8 +219,8 @@ func TestGetUpdates(t *testing.T) {
 			Slot{ID: "bbb", DrawID: "draw1", Round: 1, Position: 2, Name: "Rafael Nadal", Seed: "(2)", SetScores: setScoresB},
 		})
 		assert.Equal(newSets, []SetScore{
-				{ID: "", DrawSlotID: "bbb", Number: 1, Games: 6, Tiebreak: 0},
-				{ID: "", DrawSlotID: "bbb", Number: 2, Games: 6, Tiebreak: 0},
+			{ID: "", DrawSlotID: "bbb", Number: 1, Games: 6, Tiebreak: 0},
+			{ID: "", DrawSlotID: "bbb", Number: 2, Games: 6, Tiebreak: 0},
 		})
 		assert.Equal(updatedSets, []SetScore{})
 	})

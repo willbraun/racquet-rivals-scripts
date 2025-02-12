@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"log"
 	"os"
 	"reflect"
 	"regexp"
@@ -76,7 +77,8 @@ func toSlotSlice(sr []SlotRecord) slotSlice {
 }
 
 func getSlotKey(s Slot) string {
-	return fmt.Sprintf("%d.%d", s.Round, s.Position)
+	formattedPosition := fmt.Sprintf("%03d", s.Position)
+	return fmt.Sprintf("%d.%s", s.Round, formattedPosition)
 }
 
 func getUpdates(scraped slotSlice, current slotSlice, seeds map[string]string) (slotSlice, slotSlice, []SetScore, []SetScore) {
@@ -101,8 +103,7 @@ func getUpdates(scraped slotSlice, current slotSlice, seeds map[string]string) (
 		keys = append(keys, k)
 	}
 
-	// Sort keys to ensure consistent order for unit tests
-	// Sorting by string is fine as the order of API calls doesn't matter
+	// Sort keys to ensure consistent order for testing/debugging
 	sort.Strings(keys)
 
 	newSlots := slotSlice{}
@@ -134,25 +135,33 @@ func getUpdates(scraped slotSlice, current slotSlice, seeds map[string]string) (
 		}
 
 		// Update set scores
-		for j, scrapedSetScore := range scrapedSlot.SetScores {
+		// Scraped slots and sets don't have IDs so we can't compare them directly
+		for j, scrapedSet := range scrapedSlot.SetScores {
 			if j < len(currentSlot.SetScores) {
-				currentSetScore := currentSlot.SetScores[j]
-				if !reflect.DeepEqual(scrapedSetScore, currentSetScore) {
+				currentSet := currentSlot.SetScores[j]
+
+				// Current and scraped sets are in order on each slot so set numbers should match
+				if currentSet.Number != scrapedSet.Number {
+					log.Println("Set numbers don't match for SetScore with ID:", currentSet.ID, "Current:", currentSet.Number, "Scraped:", scrapedSet.Number)
+					continue
+				}
+
+				if currentSet.Games != scrapedSet.Games || currentSet.Tiebreak != scrapedSet.Tiebreak {
 					updatedSets = append(updatedSets, SetScore{
-						ID:         currentSetScore.ID,
+						ID:         currentSet.ID,
 						DrawSlotID: currentSlot.ID,
-						Number:     scrapedSetScore.Number,
-						Games:      scrapedSetScore.Games,
-						Tiebreak:   scrapedSetScore.Tiebreak,
+						Number:     scrapedSet.Number,
+						Games:      scrapedSet.Games,
+						Tiebreak:   scrapedSet.Tiebreak,
 					})
 				}
 			} else {
 				// Add new set score
 				newSets = append(newSets, SetScore{
 					DrawSlotID: currentSlot.ID,
-					Number:     scrapedSetScore.Number,
-					Games:      scrapedSetScore.Games,
-					Tiebreak:   scrapedSetScore.Tiebreak,
+					Number:     scrapedSet.Number,
+					Games:      scrapedSet.Games,
+					Tiebreak:   scrapedSet.Tiebreak,
 				})
 			}
 		}
