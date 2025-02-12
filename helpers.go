@@ -179,7 +179,17 @@ func getUpdates(scraped slotSlice, current slotSlice, seeds map[string]string) (
 			continue
 		}
 
-		updatedSlots.add(scrapedSlot)
+		updatedSlot := Slot{
+			ID:        currentSlot.ID,
+			DrawID:    currentSlot.DrawID,
+			Round:     currentSlot.Round,
+			Position:  currentSlot.Position,
+			Name:      newName,
+			Seed:      newSeed,
+			SetScores: scrapedSlot.SetScores,
+		}
+
+		updatedSlots.add(updatedSlot)
 	}
 
 	return newSlots, updatedSlots, newSets, updatedSets

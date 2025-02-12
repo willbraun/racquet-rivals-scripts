@@ -82,14 +82,10 @@ func main() {
 		}
 
 		newSlots, updatedSlots, newSets, updatedSets := getUpdates(scrapedSlots, currentSlots, seeds)
-		log.Println("newSlots", newSlots)
-		log.Println("updatedSlots", updatedSlots)
-		log.Println("newSets", newSets)
-		log.Println("updatedSets", updatedSets)
 
-		// postSlots(newSlots, token)
-		// updateSlots(updatedSlots, token)
-		// postSets(newSets, token)
-		// updateSets(updatedSets, token)
+		postSlots(newSlots, token)
+		updateSlots(updatedSlots, token)
+		postSets(newSets, token)
+		updateSets(updatedSets, token)
 	}
 }

@@ -211,7 +211,7 @@ func postSlots(slots slotSlice, token string) {
 		}
 		defer res.Body.Close()
 
-		printWithTimestamp(res.Status, "added", slot)
+		printWithTimestamp(res.Status, "added slot", slot)
 	}
 }
 
@@ -235,7 +235,7 @@ func updateSlots(slots slotSlice, token string) {
 		}
 		defer res.Body.Close()
 
-		printWithTimestamp(res.Status, "updated", slot)
+		printWithTimestamp(res.Status, "updated slot", slot)
 	}
 }
 
@@ -259,7 +259,7 @@ func postSets(setScores []SetScore, token string) {
 		}
 		defer res.Body.Close()
 
-		printWithTimestamp(res.Status, "added", setScore)
+		printWithTimestamp(res.Status, "added set", setScore)
 	}
 }
 
@@ -282,6 +282,6 @@ func updateSets(setScores []SetScore, token string) {
 		}
 		defer res.Body.Close()
 
-		printWithTimestamp(res.Status, "updated", setScore)
+		printWithTimestamp(res.Status, "updated set", setScore)
 	}
 }
