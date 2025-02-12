@@ -39,7 +39,7 @@ func scrapeWithProxy(targetURL string) string {
 	}
 
 	// Bright Data header to wait for is-winner class to appear
-	// Used for WTA draws to indicate that scores have loaded
+	// Used for WTA draws to indicate that scores and winners have loaded
 	if strings.Contains(targetURL, "wtatennis.com") && strings.Contains(targetURL, "draws") {
 		req.Header.Set("x-unblock-expect", "{\"element\": \".is-winner\"}")
 	}
