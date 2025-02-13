@@ -9,26 +9,6 @@ import (
 	"github.com/joho/godotenv"
 )
 
-type SetScore struct {
-	ID         string
-	DrawSlotID string
-	Number     int
-	Games      int
-	Tiebreak   int
-}
-
-type Slot struct {
-	ID        string
-	DrawID    string
-	Round     int
-	Position  int
-	Name      string
-	Seed      string
-	SetScores []SetScore
-}
-
-type slotSlice []Slot
-
 func main() {
 	location, err := time.LoadLocation("UTC")
 	if err != nil {
@@ -57,7 +37,7 @@ func main() {
 
 	for _, draw := range draws {
 		currentSlots := getSlots(draw.ID, token)
-		var scrapedSlots slotSlice
+		var scrapedSlots SlotSlice
 		var seeds map[string]string
 
 		if draw.Event == "Men's Singles" {

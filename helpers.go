@@ -27,19 +27,10 @@ func hasAlphabet(input string) bool {
 	return hasAlphabetPattern.MatchString(input)
 }
 
-func getLastName(name string) string {
-	nameSlice := strings.Split(name, " ")
-	return nameSlice[len(nameSlice)-1]
-}
-
-func (ss *slotSlice) add(s Slot) {
-	*ss = append(*ss, s)
-}
-
-func toSlotSlice(sr []SlotRecord) slotSlice {
-	result := slotSlice{}
+func toSlotSlice(sr []SlotRecord) SlotSlice {
+	result := SlotSlice{}
 	for _, record := range sr {
-		setScores := []SetScore{}
+		sets := SetSlice{}
 
 		for i := 1; i <= 5; i++ {
 			idField := fmt.Sprintf("Set%dID", i)
@@ -51,7 +42,7 @@ func toSlotSlice(sr []SlotRecord) slotSlice {
 			tiebreakValue := reflect.ValueOf(record).FieldByName(tiebreakField)
 
 			if gamesValue.IsValid() && !gamesValue.IsNil() {
-				setScores = append(setScores, SetScore{
+				sets.add(Set{
 					ID:         idValue.String(),
 					DrawSlotID: record.ID,
 					Number:     i,
@@ -70,7 +61,7 @@ func toSlotSlice(sr []SlotRecord) slotSlice {
 			Position:  record.Position,
 			Name:      record.Name,
 			Seed:      record.Seed,
-			SetScores: setScores,
+			Sets: sets,
 		})
 	}
 	return result
@@ -81,7 +72,7 @@ func getSlotKey(s Slot) string {
 	return fmt.Sprintf("%d.%s", s.Round, formattedPosition)
 }
 
-func getUpdates(scraped slotSlice, current slotSlice, seeds map[string]string) (slotSlice, slotSlice, []SetScore, []SetScore) {
+func getUpdates(scraped SlotSlice, current SlotSlice, seeds map[string]string) (SlotSlice, SlotSlice, SetSlice, SetSlice) {
 	scrapedMap := make(map[string]Slot)
 	currentMap := make(map[string]Slot)
 	allKeys := make(map[string]bool)
@@ -106,10 +97,10 @@ func getUpdates(scraped slotSlice, current slotSlice, seeds map[string]string) (
 	// Sort keys to ensure consistent order for testing/debugging
 	sort.Strings(keys)
 
-	newSlots := slotSlice{}
-	updatedSlots := slotSlice{}
-	newSets := []SetScore{}
-	updatedSets := []SetScore{}
+	newSlots := SlotSlice{}
+	updatedSlots := SlotSlice{}
+	newSets := SetSlice{}
+	updatedSets := SetSlice{}
 
 	for _, key := range keys {
 		scrapedSlot, scrapedExists := scrapedMap[key]
@@ -118,12 +109,12 @@ func getUpdates(scraped slotSlice, current slotSlice, seeds map[string]string) (
 		// New slot
 		if !currentExists {
 			newSlots.add(scrapedSlot)
-			for _, setScore := range scrapedSlot.SetScores {
-				newSets = append(newSets, SetScore{
+			for _, set := range scrapedSlot.Sets {
+				newSets.add(Set{
 					DrawSlotID: scrapedSlot.ID,
-					Number:     setScore.Number,
-					Games:      setScore.Games,
-					Tiebreak:   setScore.Tiebreak,
+					Number:     set.Number,
+					Games:      set.Games,
+					Tiebreak:   set.Tiebreak,
 				})
 			}
 			continue
@@ -136,18 +127,18 @@ func getUpdates(scraped slotSlice, current slotSlice, seeds map[string]string) (
 
 		// Update set scores
 		// Scraped slots and sets don't have IDs so we can't compare them directly
-		for j, scrapedSet := range scrapedSlot.SetScores {
-			if j < len(currentSlot.SetScores) {
-				currentSet := currentSlot.SetScores[j]
+		for j, scrapedSet := range scrapedSlot.Sets {
+			if j < len(currentSlot.Sets) {
+				currentSet := currentSlot.Sets[j]
 
 				// Current and scraped sets are in order on each slot so set numbers should match
 				if currentSet.Number != scrapedSet.Number {
-					log.Println("Set numbers don't match for SetScore with ID:", currentSet.ID, "Current:", currentSet.Number, "Scraped:", scrapedSet.Number)
+					log.Println("Set numbers don't match for Set with ID:", currentSet.ID, "Current:", currentSet.Number, "Scraped:", scrapedSet.Number)
 					continue
 				}
 
 				if currentSet.Games != scrapedSet.Games || currentSet.Tiebreak != scrapedSet.Tiebreak {
-					updatedSets = append(updatedSets, SetScore{
+					updatedSets.add(Set{
 						ID:         currentSet.ID,
 						DrawSlotID: currentSlot.ID,
 						Number:     scrapedSet.Number,
@@ -157,7 +148,7 @@ func getUpdates(scraped slotSlice, current slotSlice, seeds map[string]string) (
 				}
 			} else {
 				// Add new set score
-				newSets = append(newSets, SetScore{
+				newSets.add(Set{
 					DrawSlotID: currentSlot.ID,
 					Number:     scrapedSet.Number,
 					Games:      scrapedSet.Games,
@@ -186,7 +177,7 @@ func getUpdates(scraped slotSlice, current slotSlice, seeds map[string]string) (
 			Position:  currentSlot.Position,
 			Name:      newName,
 			Seed:      newSeed,
-			SetScores: scrapedSlot.SetScores,
+			Sets: scrapedSlot.Sets,
 		}
 
 		updatedSlots.add(updatedSlot)

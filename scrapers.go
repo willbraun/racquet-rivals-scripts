@@ -74,8 +74,8 @@ func scrapeWithProxy(targetURL string) string {
 	return ""
 }
 
-func scrapeATP(draw DrawRecord) (slotSlice, map[string]string) {
-	slots := slotSlice{}
+func scrapeATP(draw DrawRecord) (SlotSlice, map[string]string) {
+	slots := SlotSlice{}
 	seeds := make(map[string]string)
 
 	// html := scrapeWithProxy(draw.Url)
@@ -107,9 +107,9 @@ func scrapeATP(draw DrawRecord) (slotSlice, map[string]string) {
 			name := trim(player.Find("a").Text())
 			seed := trim(player.Find("span").Text())
 
-			setScores := []SetScore{}
-			sets := rawSlot.Find(".score-item")
-			sets.EachWithBreak(func(i int, set *goquery.Selection) bool {
+			sets := SetSlice{}
+			rawSets := rawSlot.Find(".score-item")
+			rawSets.EachWithBreak(func(i int, set *goquery.Selection) bool {
 				scores := set.Find("span")
 				gamesStr := scores.Eq(0).Text()
 				tiebreakStr := scores.Eq(1).Text()
@@ -131,12 +131,12 @@ func scrapeATP(draw DrawRecord) (slotSlice, map[string]string) {
 					}
 				}
 
-				setScores = append(setScores, SetScore{Number: i + 1, Games: games, Tiebreak: tiebreak})
+				sets.add(Set{Number: i + 1, Games: games, Tiebreak: tiebreak})
 
 				return true
 			})
 
-			slots.add(Slot{DrawID: draw.ID, Round: round, Position: position, Name: name, Seed: seed, SetScores: setScores})
+			slots.add(Slot{DrawID: draw.ID, Round: round, Position: position, Name: name, Seed: seed, Sets: sets})
 			seeds[name] = seed
 
 			position++
@@ -152,8 +152,8 @@ func scrapeATP(draw DrawRecord) (slotSlice, map[string]string) {
 	return slots, seeds
 }
 
-func scrapeWTA(draw DrawRecord) (slotSlice, map[string]string) {
-	slots := slotSlice{}
+func scrapeWTA(draw DrawRecord) (SlotSlice, map[string]string) {
+	slots := SlotSlice{}
 	seeds := make(map[string]string)
 
 	// html := scrapeWithProxy(draw.Url)
@@ -181,9 +181,9 @@ func scrapeWTA(draw DrawRecord) (slotSlice, map[string]string) {
 			rawSlots.Each(func(_ int, rawSlot *goquery.Selection) {
 				name, seed := wtaExtractName(rawSlot)
 
-				setScores := []SetScore{}
-				sets := rawSlot.Find(".match-table__score-cell")
-				sets.EachWithBreak(func(i int, set *goquery.Selection) bool {
+				sets := SetSlice{}
+				rawSets := rawSlot.Find(".match-table__score-cell")
+				rawSets.EachWithBreak(func(i int, set *goquery.Selection) bool {
 					fields := strings.Fields(set.Text())
 
 					if fields[0] == "-" {
@@ -203,12 +203,12 @@ func scrapeWTA(draw DrawRecord) (slotSlice, map[string]string) {
 						}
 					}
 
-					setScores = append(setScores, SetScore{Number: i + 1, Games: games, Tiebreak: tiebreak})
+					sets.add(Set{Number: i + 1, Games: games, Tiebreak: tiebreak})
 
 					return true
 				})
 
-				slots.add(Slot{DrawID: draw.ID, Round: round, Position: position, Name: name, Seed: seed, SetScores: setScores})
+				slots.add(Slot{DrawID: draw.ID, Round: round, Position: position, Name: name, Seed: seed, Sets: sets})
 				seeds[name] = seed
 
 				position++
