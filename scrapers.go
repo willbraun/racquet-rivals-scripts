@@ -8,7 +8,6 @@ import (
 	"net/http"
 	"net/url"
 	"os"
-	"regexp"
 	"strconv"
 	"strings"
 	"time"
@@ -39,8 +38,8 @@ func scrapeWithProxy(targetURL string) string {
 	}
 
 	// Bright Data header to wait for is-winner class to appear
-	// Used for WTA draws to indicate that scores and winners have loaded
-	if strings.Contains(targetURL, "wtatennis.com") && strings.Contains(targetURL, "draws") {
+	// Used for WTA draws to indicate that scores and winners have been rendered
+	if strings.Contains(targetURL, "wtatennis.com") {
 		req.Header.Set("x-unblock-expect", "{\"element\": \".is-winner\"}")
 	}
 
@@ -171,11 +170,9 @@ func scrapeWTA(draw DrawRecord) (slotSlice, map[string]string) {
 		log.Println(err)
 	}
 
-	round := 0
-
 	roundContainers := doc.Find(`.tournament-draw__tab[data-ui-tab="Singles"]`).Find(".tournament-draw__round-container")
-	roundContainers.Each(func(_ int, rc *goquery.Selection) {
-		round++
+	roundContainers.Each(func(i int, rc *goquery.Selection) {
+		round := i + 1
 		position := 1
 
 		matches := rc.Find(".tournament-draw__match-table")
@@ -217,59 +214,17 @@ func scrapeWTA(draw DrawRecord) (slotSlice, map[string]string) {
 				position++
 			})
 		})
-	})
 
-	winnerName := ""
-	winnerSeed := ""
-	if len(slots) > 0 && slots[len(slots)-1].Name != "" {
-		winnerName = scrapeWTAFinal(draw)
+		if round == roundContainers.Length() {
+			winner := rc.Find(".match-table__team.is-winner")
+			winnerName, winnerSeed := wtaExtractName(winner)
 
-		for _, slot := range slots {
-			if slot.Round == round && getLastName(slot.Name) == getLastName(winnerName) {
-				winnerName = slot.Name
-				winnerSeed = slot.Seed
-				break
-			}
+			round++
+			slots.add(Slot{DrawID: draw.ID, Round: round, Position: 1, Name: winnerName, Seed: winnerSeed})
 		}
-	}
-
-	round++
-	slots.add(Slot{DrawID: draw.ID, Round: round, Position: 1, Name: winnerName, Seed: winnerSeed})
+	})
 
 	return slots, seeds
-}
-
-func scrapeWTAFinal(draw DrawRecord) string {
-	name := ""
-
-	// wtaDrawId := strings.Split(draw.Url, "/")[4]
-	// wtaDrawSlug := strings.Split(draw.Url, "/")[5]
-	// url := fmt.Sprintf(`https://www.wtatennis.com/tournament/%s/%s/%d/scores`, wtaDrawId, wtaDrawSlug, draw.Year)
-
-	// html := scrapeWithProxy(url)
-	html, err := readHTMLFromFile("scraped_pages/wtaFinal.html")
-	if err != nil {
-		log.Println("Error reading HTML from WTA file:", err)
-		return err.Error()
-	}
-
-	uncommented := regexp.MustCompile(`<!--|-->`).ReplaceAllString(html, "")
-	reader := strings.NewReader(uncommented)
-
-	doc, err := goquery.NewDocumentFromReader(reader)
-	if err != nil {
-		log.Println(err)
-	}
-
-	completed := doc.Find(`.tournament-scores__tab[data-ui-tab="Singles"]`).Find(".tennis-match--completed")
-	completed.Each(func(_ int, match *goquery.Selection) {
-		roundLabel := trim(match.Find(".tennis-match__round").Text())
-		if roundLabel == "Final" {
-			name, _ = wtaExtractName(match.Find(".match-table__team--winner"))
-		}
-	})
-
-	return name
 }
 
 func wtaExtractName(x *goquery.Selection) (string, string) {
