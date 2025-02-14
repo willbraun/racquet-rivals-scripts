@@ -55,13 +55,13 @@ func toSlotSlice(sr []SlotRecord) SlotSlice {
 		}
 
 		result.add(Slot{
-			ID:        record.ID,
-			DrawID:    record.DrawID,
-			Round:     record.Round,
-			Position:  record.Position,
-			Name:      record.Name,
-			Seed:      record.Seed,
-			Sets: sets,
+			ID:       record.ID,
+			DrawID:   record.DrawID,
+			Round:    record.Round,
+			Position: record.Position,
+			Name:     record.Name,
+			Seed:     record.Seed,
+			Sets:     sets,
 		})
 	}
 	return result
@@ -171,13 +171,13 @@ func getUpdates(scraped SlotSlice, current SlotSlice, seeds map[string]string) (
 		}
 
 		updatedSlot := Slot{
-			ID:        currentSlot.ID,
-			DrawID:    currentSlot.DrawID,
-			Round:     currentSlot.Round,
-			Position:  currentSlot.Position,
-			Name:      newName,
-			Seed:      newSeed,
-			Sets: scrapedSlot.Sets,
+			ID:       currentSlot.ID,
+			DrawID:   currentSlot.DrawID,
+			Round:    currentSlot.Round,
+			Position: currentSlot.Position,
+			Name:     newName,
+			Seed:     newSeed,
+			Sets:     scrapedSlot.Sets,
 		}
 
 		updatedSlots.add(updatedSlot)
