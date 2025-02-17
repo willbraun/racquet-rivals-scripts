@@ -78,12 +78,12 @@ func scrapeATP(draw DrawRecord) (SlotSlice, map[string]string) {
 	slots := SlotSlice{}
 	seeds := make(map[string]string)
 
-	// html := scrapeWithProxy(draw.Url)
-	html, err := readHTMLFromFile("scraped_pages/atp.html")
-	if err != nil {
-		log.Println("Error reading HTML from ATP file:", err)
-		return slots, seeds
-	}
+	html := scrapeWithProxy(draw.Url)
+	// html, err := readHTMLFromFile("scraped_pages/atp.html")
+	// if err != nil {
+	// 	log.Println("Error reading HTML from ATP file:", err)
+	// 	return slots, seeds
+	// }
 
 	reader := strings.NewReader(html)
 
@@ -156,12 +156,12 @@ func scrapeWTA(draw DrawRecord) (SlotSlice, map[string]string) {
 	slots := SlotSlice{}
 	seeds := make(map[string]string)
 
-	// html := scrapeWithProxy(draw.Url)
-	html, err := readHTMLFromFile("scraped_pages/wtaRendered.html")
-	if err != nil {
-		log.Println("Error reading HTML from WTA file:", err)
-		return slots, seeds
-	}
+	html := scrapeWithProxy(draw.Url)
+	// html, err := readHTMLFromFile("scraped_pages/wtaRendered.html")
+	// if err != nil {
+	// 	log.Println("Error reading HTML from WTA file:", err)
+	// 	return slots, seeds
+	// }
 
 	reader := strings.NewReader(html)
 
