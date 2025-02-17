@@ -9,17 +9,6 @@ import (
 	"github.com/joho/godotenv"
 )
 
-type Slot struct {
-	ID       string
-	DrawID   string
-	Round    int
-	Position int
-	Name     string
-	Seed     string
-}
-
-type slotSlice []Slot
-
 func main() {
 	location, err := time.LoadLocation("UTC")
 	if err != nil {
@@ -47,8 +36,8 @@ func main() {
 	}
 
 	for _, draw := range draws {
-		currentSlots := toSlotSlice(getSlots(draw.ID, token))
-		var scrapedSlots slotSlice
+		currentSlots := getSlots(draw.ID, token)
+		var scrapedSlots SlotSlice
 		var seeds map[string]string
 
 		if draw.Event == "Men's Singles" {
@@ -73,10 +62,11 @@ func main() {
 			continue
 		}
 
-		newSlots := getNewSlots(scrapedSlots, currentSlots)
-		postSlots(newSlots, token)
+		newSlots, updatedSlots, newSets, updatedSets := getUpdates(scrapedSlots, currentSlots, seeds)
 
-		updatedSlots := prepareUpdates(scrapedSlots, currentSlots, seeds)
+		postSlots(newSlots, token)
 		updateSlots(updatedSlots, token)
+		postSets(newSets, token)
+		updateSets(updatedSets, token)
 	}
 }

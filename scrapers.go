@@ -8,8 +8,9 @@ import (
 	"net/http"
 	"net/url"
 	"os"
-	"regexp"
+	"strconv"
 	"strings"
+	"time"
 
 	"github.com/PuerkitoBio/goquery"
 )
@@ -30,29 +31,60 @@ func scrapeWithProxy(targetURL string) string {
 		},
 	}
 
-	resp, err := client.Get(targetURL)
+	req, err := http.NewRequest("GET", targetURL, nil)
 	if err != nil {
-		log.Println(fmt.Sprintf("Error making request - %s:", targetURL), err)
-		return ""
-	}
-	defer resp.Body.Close()
-
-	body, err := io.ReadAll(resp.Body)
-	if err != nil {
-		log.Println(fmt.Sprintf("Error reading response body - %s:", targetURL), err)
+		log.Println("Error creating request:", err)
 		return ""
 	}
 
-	printWithTimestamp("Finished scraping:", targetURL)
+	// Bright Data header to wait for is-winner class to appear
+	// Used for WTA draws to indicate that scores and winners have been rendered
+	if strings.Contains(targetURL, "wtatennis.com") {
+		req.Header.Set("x-unblock-expect", "{\"element\": \".is-winner\"}")
+	}
 
-	return string(body)
+	// Exponential backoff retry mechanism
+	maxRetries := 5
+	backoff := time.Second
+
+	for i := 0; i < maxRetries; i++ {
+		printWithTimestamp("Attempt:", i+1)
+		resp, err := client.Do(req)
+		if err != nil || resp.StatusCode != 200 {
+			log.Println(fmt.Sprintf("Error making request - %s:", targetURL), err)
+			if i < maxRetries-1 {
+				time.Sleep(backoff)
+				backoff *= 2
+				continue
+			}
+			return ""
+		}
+		defer resp.Body.Close()
+
+		body, err := io.ReadAll(resp.Body)
+		if err != nil {
+			log.Println(fmt.Sprintf("Error reading response body - %s:", targetURL), err)
+			return ""
+		}
+
+		printWithTimestamp("Finished scraping:", targetURL)
+		return string(body)
+	}
+
+	return ""
 }
 
-func scrapeATP(draw DrawRecord) (slotSlice, map[string]string) {
-	slots := slotSlice{}
+func scrapeATP(draw DrawRecord) (SlotSlice, map[string]string) {
+	slots := SlotSlice{}
 	seeds := make(map[string]string)
 
 	html := scrapeWithProxy(draw.Url)
+	// html, err := readHTMLFromFile("scraped_pages/atp.html")
+	// if err != nil {
+	// 	log.Println("Error reading HTML from ATP file:", err)
+	// 	return slots, seeds
+	// }
+
 	reader := strings.NewReader(html)
 
 	doc, err := goquery.NewDocumentFromReader(reader)
@@ -69,12 +101,42 @@ func scrapeATP(draw DrawRecord) (slotSlice, map[string]string) {
 		round++
 		position := 1
 
-		players := rc.Find(".name")
-		players.Each(func(_ int, player *goquery.Selection) {
+		rawSlots := rc.Find(".stats-item")
+		rawSlots.Each(func(_ int, rawSlot *goquery.Selection) {
+			player := rawSlot.Find(".name")
 			name := trim(player.Find("a").Text())
 			seed := trim(player.Find("span").Text())
 
-			slots.add(Slot{DrawID: draw.ID, Round: round, Position: position, Name: name, Seed: seed})
+			sets := SetSlice{}
+			rawSets := rawSlot.Find(".score-item")
+			rawSets.EachWithBreak(func(i int, set *goquery.Selection) bool {
+				scores := set.Find("span")
+				gamesStr := scores.Eq(0).Text()
+				tiebreakStr := scores.Eq(1).Text()
+
+				if gamesStr == "" {
+					return false
+				}
+
+				games, err := strconv.Atoi(gamesStr)
+				if err != nil {
+					log.Println("Error converting games to int:", err)
+				}
+
+				tiebreak := 0
+				if tiebreakStr != "" {
+					tiebreak, err = strconv.Atoi(tiebreakStr)
+					if err != nil {
+						log.Println("Error converting tiebreak to int:", err)
+					}
+				}
+
+				sets.add(Set{Number: i + 1, Games: games, Tiebreak: tiebreak})
+
+				return true
+			})
+
+			slots.add(Slot{DrawID: draw.ID, Round: round, Position: position, Name: name, Seed: seed, Sets: sets})
 			seeds[name] = seed
 
 			position++
@@ -90,11 +152,17 @@ func scrapeATP(draw DrawRecord) (slotSlice, map[string]string) {
 	return slots, seeds
 }
 
-func scrapeWTA(draw DrawRecord) (slotSlice, map[string]string) {
-	slots := slotSlice{}
+func scrapeWTA(draw DrawRecord) (SlotSlice, map[string]string) {
+	slots := SlotSlice{}
 	seeds := make(map[string]string)
 
 	html := scrapeWithProxy(draw.Url)
+	// html, err := readHTMLFromFile("scraped_pages/wtaRendered.html")
+	// if err != nil {
+	// 	log.Println("Error reading HTML from WTA file:", err)
+	// 	return slots, seeds
+	// }
+
 	reader := strings.NewReader(html)
 
 	doc, err := goquery.NewDocumentFromReader(reader)
@@ -102,72 +170,61 @@ func scrapeWTA(draw DrawRecord) (slotSlice, map[string]string) {
 		log.Println(err)
 	}
 
-	round := 0
-
 	roundContainers := doc.Find(`.tournament-draw__tab[data-ui-tab="Singles"]`).Find(".tournament-draw__round-container")
-	roundContainers.Each(func(_ int, rc *goquery.Selection) {
-		round++
+	roundContainers.Each(func(i int, rc *goquery.Selection) {
+		round := i + 1
 		position := 1
 
 		matches := rc.Find(".tournament-draw__match-table")
 		matches.Each(func(_ int, match *goquery.Selection) {
-			rows := match.ChildrenMatcher(goquery.Single("table")).ChildrenMatcher(goquery.Single("tbody")).Children()
-			rows.Each(func(_ int, row *goquery.Selection) {
-				name, seed := wtaExtractName(row)
+			rawSlots := match.ChildrenMatcher(goquery.Single("table")).ChildrenMatcher(goquery.Single("tbody")).Children()
+			rawSlots.Each(func(_ int, rawSlot *goquery.Selection) {
+				name, seed := wtaExtractName(rawSlot)
 
-				slots.add(Slot{DrawID: draw.ID, Round: round, Position: position, Name: name, Seed: seed})
+				sets := SetSlice{}
+				rawSets := rawSlot.Find(".match-table__score-cell")
+				rawSets.EachWithBreak(func(i int, set *goquery.Selection) bool {
+					fields := strings.Fields(set.Text())
+
+					if fields[0] == "-" {
+						return false
+					}
+
+					games, err := strconv.Atoi(fields[0])
+					if err != nil {
+						log.Println("Error converting games to int:", err)
+					}
+
+					tiebreak := 0
+					if len(fields) > 1 {
+						tiebreak, err = strconv.Atoi(fields[1])
+						if err != nil {
+							log.Println("Error converting tiebreak to int:", err)
+						}
+					}
+
+					sets.add(Set{Number: i + 1, Games: games, Tiebreak: tiebreak})
+
+					return true
+				})
+
+				slots.add(Slot{DrawID: draw.ID, Round: round, Position: position, Name: name, Seed: seed, Sets: sets})
 				seeds[name] = seed
 
 				position++
 			})
 		})
-	})
 
-	winnerName := ""
-	winnerSeed := ""
-	if len(slots) > 0 && slots[len(slots)-1].Name != "" {
-		winnerName = scrapeWTAFinal(draw)
+		if round == roundContainers.Length() {
+			winner := rc.Find(".match-table__team.is-winner")
+			winnerName, winnerSeed := wtaExtractName(winner)
 
-		for _, slot := range slots {
-			if slot.Round == round && getLastName(slot.Name) == getLastName(winnerName) {
-				winnerName = slot.Name
-				winnerSeed = slot.Seed
-				break
-			}
+			round++
+			slots.add(Slot{DrawID: draw.ID, Round: round, Position: 1, Name: winnerName, Seed: winnerSeed})
 		}
-	}
-
-	round++
-	slots.add(Slot{DrawID: draw.ID, Round: round, Position: 1, Name: winnerName, Seed: winnerSeed})
+	})
 
 	return slots, seeds
-}
-
-func scrapeWTAFinal(draw DrawRecord) string {
-	name := ""
-
-	wtaDrawId := strings.Split(draw.Url, "/")[4]
-	wtaDrawSlug := strings.Split(draw.Url, "/")[5]
-	url := fmt.Sprintf(`https://www.wtatennis.com/tournament/%s/%s/%d/scores`, wtaDrawId, wtaDrawSlug, draw.Year)
-
-	html := scrapeWithProxy(url)
-	uncommented := regexp.MustCompile(`<!--|-->`).ReplaceAllString(html, "")
-	reader := strings.NewReader(uncommented)
-
-	doc, err := goquery.NewDocumentFromReader(reader)
-	if err != nil {
-		log.Println(err)
-	}
-
-	completed := doc.Find(`.tournament-scores__tab[data-ui-tab="Singles"]`).Find(".tennis-match--completed")
-	completed.Each(func(_ int, match *goquery.Selection) {
-		roundLabel := trim(match.Find(".tennis-match__round").Text())
-		if roundLabel == "Final" {
-			name, _ = wtaExtractName(match.Find(".match-table__team--winner"))
-		}
-	})
-
-	return name
 }
 
 func wtaExtractName(x *goquery.Selection) (string, string) {

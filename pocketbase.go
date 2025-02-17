@@ -10,75 +10,6 @@ import (
 	"time"
 )
 
-type UserRecord struct {
-	ID              string `json:"id"`
-	Created         string `json:"created"`
-	Updated         string `json:"updated"`
-	Username        string `json:"username"`
-	Email           string `json:"email"`
-	Verified        bool   `json:"verified"`
-	EmailVisibility bool   `json:"emailVisibility"`
-}
-
-type UserAuthRes struct {
-	Token  string     `json:"token"`
-	Record UserRecord `json:"record"`
-}
-
-type DrawRecord struct {
-	ID               string `json:"id"`
-	Name             string `json:"name"`
-	Event            string `json:"event"`
-	Year             int    `json:"year"`
-	Url              string `json:"url"`
-	Start_Date       string `json:"start_date"`
-	End_Date         string `json:"end_date"`
-	Prediction_Close string `json:"prediction_close"`
-	Size             int    `json:"size"`
-}
-
-type DrawRes struct {
-	Page       int          `json:"page"`
-	PerPage    int          `json:"perPage"`
-	TotalItems int          `json:"totalItems"`
-	TotalPages int          `json:"totalPages"`
-	Items      []DrawRecord `json:"items"`
-}
-
-type SlotRecord struct {
-	ID       string `json:"id"`
-	DrawID   string `json:"draw_id"`
-	Round    int    `json:"round"`
-	Position int    `json:"position"`
-	Name     string `json:"name"`
-	Seed     string `json:"seed"`
-}
-
-type SlotRes struct {
-	Page       int          `json:"page"`
-	PerPage    int          `json:"perPage"`
-	TotalPages int          `json:"totalPages"`
-	TotalItems int          `json:"totalItems"`
-	Items      []SlotRecord `json:"items"`
-}
-
-type CreateUpdateSlotReq struct {
-	DrawID   string `json:"draw_id"`
-	Round    int    `json:"round"`
-	Position int    `json:"position"`
-	Name     string `json:"name"`
-	Seed     string `json:"seed"`
-}
-
-type CreateSlotRes struct {
-	ID       string `json:"id"`
-	DrawID   string `json:"draw_id"`
-	Name     string `json:"name"`
-	Seed     int    `json:"seed"`
-	Round    int    `json:"round"`
-	Position int    `json:"position"`
-}
-
 func makeHTTPRequest(method, url, token string, requestData interface{}) (*http.Response, error) {
 	body, err := json.Marshal(requestData)
 	if err != nil {
@@ -149,8 +80,8 @@ func getDraws(token string) []DrawRecord {
 	return drawRes.Items
 }
 
-func getSlots(drawId string, token string) []SlotRecord {
-	url := fmt.Sprintf(`%s/api/collections/draw_slot/records?perPage=255&filter=(draw_id="%s")&skipTotal=true`, os.Getenv("BASE_URL"), drawId)
+func getSlots(drawId string, token string) SlotSlice {
+	url := fmt.Sprintf(`%s/api/collections/slots_with_scores/records?perPage=255&filter=(draw_id="%s")&skipTotal=true`, os.Getenv("BASE_URL"), drawId)
 
 	res, err := makeHTTPRequest("GET", url, token, nil)
 	if err != nil {
@@ -165,10 +96,10 @@ func getSlots(drawId string, token string) []SlotRecord {
 		return nil
 	}
 
-	return slotRes.Items
+	return toSlotSlice(slotRes.Items)
 }
 
-func postSlots(slots slotSlice, token string) {
+func postSlots(slots SlotSlice, token string) {
 	if len(slots) == 0 {
 		return
 	}
@@ -189,11 +120,11 @@ func postSlots(slots slotSlice, token string) {
 		}
 		defer res.Body.Close()
 
-		printWithTimestamp(res.Status, "added", slot)
+		printWithTimestamp(res.Status, "added slot", slot)
 	}
 }
 
-func updateSlots(slots slotSlice, token string) {
+func updateSlots(slots SlotSlice, token string) {
 	if len(slots) == 0 {
 		return
 	}
@@ -213,6 +144,53 @@ func updateSlots(slots slotSlice, token string) {
 		}
 		defer res.Body.Close()
 
-		printWithTimestamp(res.Status, "updated", slot)
+		printWithTimestamp(res.Status, "updated slot", slot)
+	}
+}
+
+func postSets(setScores SetSlice, token string) {
+	if len(setScores) == 0 {
+		return
+	}
+
+	url := fmt.Sprintf(`%s/api/collections/set_score/records`, os.Getenv("BASE_URL"))
+
+	for _, setScore := range setScores {
+		requestData := CreateUpdateSetReq{
+			DrawSlotID: setScore.DrawSlotID,
+			Number:     setScore.Number,
+			Games:      setScore.Games,
+			Tiebreak:   setScore.Tiebreak,
+		}
+		res, err := makeHTTPRequest("POST", url, token, requestData)
+		if err != nil {
+			log.Println(err)
+		}
+		defer res.Body.Close()
+
+		printWithTimestamp(res.Status, "added set", setScore)
+	}
+}
+
+func updateSets(setScores SetSlice, token string) {
+	if len(setScores) == 0 {
+		return
+	}
+
+	for _, setScore := range setScores {
+		url := fmt.Sprintf(`%s/api/collections/set_score/records/%s`, os.Getenv("BASE_URL"), setScore.ID)
+		requestData := CreateUpdateSetReq{
+			DrawSlotID: setScore.DrawSlotID,
+			Number:     setScore.Number,
+			Games:      setScore.Games,
+			Tiebreak:   setScore.Tiebreak,
+		}
+		res, err := makeHTTPRequest("PATCH", url, token, requestData)
+		if err != nil {
+			log.Println(err)
+		}
+		defer res.Body.Close()
+
+		printWithTimestamp(res.Status, "updated set", setScore)
 	}
 }
