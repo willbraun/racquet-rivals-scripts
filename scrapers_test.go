@@ -22,7 +22,7 @@ func TestScrapeATP(t *testing.T) {
 		Name:             "Australian Open",
 		Event:            "Men's Singles",
 		Year:             2025,
-		Url:              "https://www.atptour.com/en/scores/current/australian-open/580/draws",
+		Url:              "https://www.atptour.com/en/scores/current/roland-garros/520/draws",
 		Start_Date:       "2025-01-12 12:00:00.000",
 		End_Date:         "2025-01-26 12:00:00.000",
 		Prediction_Close: "2025-01-19 12:00:00.000",

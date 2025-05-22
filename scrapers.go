@@ -114,7 +114,7 @@ func scrapeATP(draw DrawRecord) (SlotSlice, map[string]string) {
 				gamesStr := scores.Eq(0).Text()
 				tiebreakStr := scores.Eq(1).Text()
 
-				if gamesStr == "" {
+				if gamesStr == "" || gamesStr == "-" {
 					return false
 				}
 
