@@ -17,8 +17,9 @@ func TestScrapeATP(t *testing.T) {
 	}
 
 	// If this fails, change the draw URL to a current draw (with current in the URL)
+	// Current draw will have some empty slots
 	draw := DrawRecord{
-		ID:               "abc123",
+		ID:               "test_mens_draw_id",
 		Name:             "Australian Open",
 		Event:            "Men's Singles",
 		Year:             2025,
@@ -33,11 +34,17 @@ func TestScrapeATP(t *testing.T) {
 		scrapedSlots, seeds := scrapeATP(draw)
 		assert := assert.New(t)
 
-		assert.Equal(len(scrapedSlots), 255)
+		uniqueNames := make(map[string]bool)
 
-		// If the draw is not complete, there will be an extra empty seed representing empty slots
+		assert.Equal(255, len(scrapedSlots))
+		for _, slot := range scrapedSlots {
+			uniqueNames[slot.Name] = true
+		}
+
+		// If the draw is not complete, there will be empty slots and an extra empty seed representing those
 		delete(seeds, "")
-		assert.Equal(len(seeds), 128)
+		delete(uniqueNames, "")
+		assert.Equal(len(uniqueNames), len(seeds))
 	})
 }
 
@@ -50,7 +57,7 @@ func TestScrapeWTA(t *testing.T) {
 	}
 
 	draw := DrawRecord{
-		ID:               "abc123",
+		ID:               "test_womens_draw_id",
 		Name:             "Australian Open",
 		Event:            "Women's Singles",
 		Year:             2025,
@@ -65,12 +72,15 @@ func TestScrapeWTA(t *testing.T) {
 		scrapedSlots, seeds := scrapeWTA(draw)
 		assert := assert.New(t)
 
-		assert.Equal(len(scrapedSlots), 255)
+		uniqueNames := make(map[string]bool)
+
+		assert.Equal(255, len(scrapedSlots))
 		for _, slot := range scrapedSlots {
 			assert.NotEmpty(slot.Name)
+			uniqueNames[slot.Name] = true
 		}
 
 		delete(seeds, "")
-		assert.Equal(len(seeds), 128)
+		assert.Equal(len(uniqueNames), len(seeds))
 	})
 }

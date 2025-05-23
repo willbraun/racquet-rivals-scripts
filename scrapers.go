@@ -156,7 +156,16 @@ func scrapeWTA(draw DrawRecord) (SlotSlice, map[string]string) {
 	slots := SlotSlice{}
 	seeds := make(map[string]string)
 
+	// Real draw URL
 	html := scrapeWithProxy(draw.Url)
+
+	// Save the HTML to a file for testing
+	// err := saveHTMLToFile(html, "scraped_pages/wtaRendered.html")
+	// if err != nil {
+	// 	log.Println("Error saving HTML to file:", err)
+	// }
+
+	// Read the HTML from the file for testing
 	// html, err := readHTMLFromFile("scraped_pages/wtaRendered.html")
 	// if err != nil {
 	// 	log.Println("Error reading HTML from WTA file:", err)
@@ -170,53 +179,45 @@ func scrapeWTA(draw DrawRecord) (SlotSlice, map[string]string) {
 		log.Println(err)
 	}
 
-	roundContainers := doc.Find(`.tournament-draw__tab[data-ui-tab="Singles"]`).Find(".tournament-draw__round-container")
+	roundContainers := doc.Find(`.tournament-draw__tab[data-event-type="LS"]`).Find(".tournament-draw__round-container")
 	roundContainers.Each(func(i int, rc *goquery.Selection) {
 		round := i + 1
 		position := 1
 
-		matches := rc.Find(".tournament-draw__match-table")
-		matches.Each(func(_ int, match *goquery.Selection) {
-			rawSlots := match.ChildrenMatcher(goquery.Single("table")).ChildrenMatcher(goquery.Single("tbody")).Children()
-			rawSlots.Each(func(_ int, rawSlot *goquery.Selection) {
-				name, seed := wtaExtractName(rawSlot)
+		rawSlots := rc.Find(".match-table__row")
+		rawSlots.Each(func(_ int, rawSlot *goquery.Selection) {
+			name, seed := wtaExtractName(rawSlot)
 
-				sets := SetSlice{}
-				rawSets := rawSlot.Find(".match-table__score-cell")
-				rawSets.EachWithBreak(func(i int, set *goquery.Selection) bool {
-					fields := strings.Fields(set.Text())
+			sets := SetSlice{}
+			rawSets := rawSlot.Find(".match-table__score-cell")
+			rawSets.EachWithBreak(func(i int, set *goquery.Selection) bool {
+				value := trim(set.Text())
 
-					if fields[0] == "-" {
-						return false
-					}
+				if value == "." {
+					return false
+				}
 
-					games, err := strconv.Atoi(fields[0])
-					if err != nil {
-						log.Println("Error converting games to int:", err)
-					}
+				games, err := strconv.Atoi(value)
+				if err != nil {
+					log.Println("Error converting games to int:", err)
+				}
 
-					tiebreak := 0
-					if len(fields) > 1 {
-						tiebreak, err = strconv.Atoi(fields[1])
-						if err != nil {
-							log.Println("Error converting tiebreak to int:", err)
-						}
-					}
+				// No tiebreak score shown for WTA
+				tiebreak := 0
 
-					sets.add(Set{Number: i + 1, Games: games, Tiebreak: tiebreak})
+				sets.add(Set{Number: i + 1, Games: games, Tiebreak: tiebreak})
 
-					return true
-				})
-
-				slots.add(Slot{DrawID: draw.ID, Round: round, Position: position, Name: name, Seed: seed, Sets: sets})
-				seeds[name] = seed
-
-				position++
+				return true
 			})
+
+			slots.add(Slot{DrawID: draw.ID, Round: round, Position: position, Name: name, Seed: seed, Sets: sets})
+			seeds[name] = seed
+
+			position++
 		})
 
 		if round == roundContainers.Length() {
-			winner := rc.Find(".match-table__team.is-winner")
+			winner := rc.Find(".match-table__row.is-winner")
 			winnerName, winnerSeed := wtaExtractName(winner)
 
 			round++
@@ -228,10 +229,7 @@ func scrapeWTA(draw DrawRecord) (SlotSlice, map[string]string) {
 }
 
 func wtaExtractName(x *goquery.Selection) (string, string) {
-	firstNameRaw := trim(x.Find(".match-table__player-fname").Text())
-	firstName := strings.ReplaceAll(firstNameRaw, ".", "")
-	lastName := trim(x.Find(".match-table__player-lname").Text())
-	name := trim(firstName + " " + lastName)
+	name := trim(x.Find(".match-table__player-fullname").Text())
 
 	if !hasAlphabet(name) {
 		return "", ""
