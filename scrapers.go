@@ -40,18 +40,18 @@ func scrapeWithProxy(targetURL string) string {
 	// Bright Data header to wait for is-winner class to appear
 	// Used for WTA draws to indicate that scores and winners have been rendered
 	if strings.Contains(targetURL, "wtatennis.com") {
-		req.Header.Set("x-unblock-expect", "{\"element\": \".is-winner\"}")
+		req.Header.Set("x-unblock-expect", "{\"element\": \".match-table__player-name\"}")
 	}
 
 	// Exponential backoff retry mechanism
 	maxRetries := 5
 	backoff := time.Second
 
-	for i := 0; i < maxRetries; i++ {
+	for i := range maxRetries {
 		printWithTimestamp("Attempt:", i+1)
 		resp, err := client.Do(req)
 		if err != nil || resp.StatusCode != 200 {
-			log.Println(fmt.Sprintf("Error making request - %s:", targetURL), err)
+			log.Println(fmt.Sprintf("Error making request - %s:", targetURL), err, "Status Code:", resp.Status, "Response Body:", resp.Body)
 			if i < maxRetries-1 {
 				time.Sleep(backoff)
 				backoff *= 2
@@ -78,7 +78,16 @@ func scrapeATP(draw DrawRecord) (SlotSlice, map[string]string) {
 	slots := SlotSlice{}
 	seeds := make(map[string]string)
 
+	// Real draw URL
 	html := scrapeWithProxy(draw.Url)
+
+	// Save the HTML to a file for testing
+	// err := saveHTMLToFile(html, "scraped_pages/atp.html")
+	// if err != nil {
+	// 	log.Println("Error saving HTML to file:", err)
+	// }
+
+	// Read the HTML from the file for testing
 	// html, err := readHTMLFromFile("scraped_pages/atp.html")
 	// if err != nil {
 	// 	log.Println("Error reading HTML from ATP file:", err)
@@ -193,7 +202,7 @@ func scrapeWTA(draw DrawRecord) (SlotSlice, map[string]string) {
 			rawSets.EachWithBreak(func(i int, set *goquery.Selection) bool {
 				value := trim(set.Text())
 
-				if value == "." {
+				if value == "." || value == "" {
 					return false
 				}
 
