@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+	"net/url"
 	"os"
 	"time"
 )
@@ -61,9 +62,11 @@ func login() string {
 
 func getDraws(token string) []DrawRecord {
 	today := time.Now().UTC().Format("2006-01-02")
-	url := fmt.Sprintf(`%s/api/collections/draw/records?filter=(end_date>="%s")&fields=id,name,event,year,url,start_date,end_date,prediction_close,size`, os.Getenv("BASE_URL"), today)
+	filter := fmt.Sprintf(`(end_date>="%s"&&url!="")`, today)
+	encodedFilter := url.QueryEscape(filter)
+	pocketbaseUrl := fmt.Sprintf(`%s/api/collections/draw/records?filter=%s&fields=id,name,event,year,url,start_date,end_date,prediction_close,size`, os.Getenv("BASE_URL"), encodedFilter)
 
-	res, err := makeHTTPRequest("GET", url, token, nil)
+	res, err := makeHTTPRequest("GET", pocketbaseUrl, token, nil)
 	if err != nil {
 		log.Println(err)
 		return nil

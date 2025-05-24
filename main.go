@@ -42,11 +42,11 @@ func main() {
 
 		if draw.Event == "Men's Singles" {
 			scrapedSlots, seeds = scrapeATP(draw)
-			log.Println("Cannot scrape ATP draw:", draw.Name, draw.Event, draw.Year)
 		} else if draw.Event == "Women's Singles" {
 			scrapedSlots, seeds = scrapeWTA(draw)
 		} else {
 			log.Println("Invalid event:", draw.Event)
+			continue
 		}
 
 		received := len(scrapedSlots)
