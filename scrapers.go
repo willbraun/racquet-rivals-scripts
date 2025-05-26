@@ -189,11 +189,7 @@ func scrapeWTA(draw DrawRecord) (SlotSlice, map[string]string) {
 		log.Println(err)
 	}
 
-	type slotKey struct {
-		Round    int
-		Position int
-	}
-	slotMap := make(map[slotKey]*Slot)
+	slotMap := make(map[SlotKey]*Slot)
 
 	roundContainers := doc.Find(`.tournament-draw__tab[data-event-type="LS"]`).Find(".tournament-draw__round-container")
 	roundContainers.Each(func(i int, rc *goquery.Selection) {
@@ -229,7 +225,7 @@ func scrapeWTA(draw DrawRecord) (SlotSlice, map[string]string) {
 
 			// Add slot for round 1
 			// For other rounds, update slot with sets, other fields should be the same
-			key := slotKey{Round: round, Position: position}
+			key := SlotKey{Round: round, Position: position}
 			if slot, ok := slotMap[key]; ok {
 				slot.Sets = sets
 			} else {
@@ -246,7 +242,7 @@ func scrapeWTA(draw DrawRecord) (SlotSlice, map[string]string) {
 			// Placeholder final slot
 			if round == roundContainers.Length() {
 				nextRound := round + 1
-				nextKey := slotKey{Round: nextRound, Position: 1}
+				nextKey := SlotKey{Round: nextRound, Position: 1}
 				slotMap[nextKey] = &Slot{
 					DrawID:   draw.ID,
 					Round:    nextRound,
@@ -262,7 +258,7 @@ func scrapeWTA(draw DrawRecord) (SlotSlice, map[string]string) {
 			if rawSlot.HasClass("is-winner") {
 				nextRound := round + 1
 				nextRoundPosition := (position + 1) / 2
-				nextKey := slotKey{Round: nextRound, Position: nextRoundPosition}
+				nextKey := SlotKey{Round: nextRound, Position: nextRoundPosition}
 				slotMap[nextKey] = &Slot{
 					DrawID:   draw.ID,
 					Round:    nextRound,

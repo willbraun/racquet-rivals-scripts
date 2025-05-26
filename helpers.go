@@ -67,35 +67,41 @@ func toSlotSlice(sr []SlotRecord) SlotSlice {
 	return result
 }
 
-func getSlotKey(s Slot) string {
-	formattedPosition := fmt.Sprintf("%03d", s.Position)
-	return fmt.Sprintf("%d.%s", s.Round, formattedPosition)
-}
-
 func getUpdates(scraped SlotSlice, current SlotSlice, seeds map[string]string) (SlotSlice, SlotSlice, SetSlice, SetSlice) {
-	scrapedMap := make(map[string]Slot)
-	currentMap := make(map[string]Slot)
-	allKeys := make(map[string]bool)
+	scrapedMap := make(map[SlotKey]Slot)
+	currentMap := make(map[SlotKey]Slot)
+	allKeys := make(map[SlotKey]bool)
 
 	for _, slot := range scraped {
-		key := getSlotKey(slot)
+		key := SlotKey{
+			Round:    slot.Round,
+			Position: slot.Position,
+		}
 		scrapedMap[key] = slot
 		allKeys[key] = true
 	}
 
 	for _, slot := range current {
-		key := getSlotKey(slot)
+		key := SlotKey{
+			Round:    slot.Round,
+			Position: slot.Position,
+		}
 		currentMap[key] = slot
 		allKeys[key] = true
 	}
 
-	keys := []string{}
+	keys := []SlotKey{}
 	for k := range allKeys {
 		keys = append(keys, k)
 	}
 
 	// Sort keys to ensure consistent order for testing/debugging
-	sort.Strings(keys)
+	sort.Slice(keys, func(i, j int) bool {
+		if keys[i].Round == keys[j].Round {
+			return keys[i].Position < keys[j].Position
+		}
+		return keys[i].Round < keys[j].Round
+	})
 
 	newSlots := SlotSlice{}
 	updatedSlots := SlotSlice{}

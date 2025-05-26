@@ -32,6 +32,11 @@ func (ss *SetSlice) add(s Set) {
 	*ss = append(*ss, s)
 }
 
+type SlotKey struct {
+	Round    int
+	Position int
+}
+
 // Pocketbase API types
 
 type UserRecord struct {
