@@ -8,6 +8,7 @@ import (
 	"net/http"
 	"net/url"
 	"os"
+	"sort"
 	"strconv"
 	"strings"
 	"time"
@@ -188,6 +189,12 @@ func scrapeWTA(draw DrawRecord) (SlotSlice, map[string]string) {
 		log.Println(err)
 	}
 
+	type slotKey struct {
+		Round    int
+		Position int
+	}
+	slotMap := make(map[slotKey]*Slot)
+
 	roundContainers := doc.Find(`.tournament-draw__tab[data-event-type="LS"]`).Find(".tournament-draw__round-container")
 	roundContainers.Each(func(i int, rc *goquery.Selection) {
 		round := i + 1
@@ -196,6 +203,7 @@ func scrapeWTA(draw DrawRecord) (SlotSlice, map[string]string) {
 		rawSlots := rc.Find(".match-table__row")
 		rawSlots.Each(func(_ int, rawSlot *goquery.Selection) {
 			name, seed := wtaExtractName(rawSlot)
+			seeds[name] = seed
 
 			sets := SetSlice{}
 			rawSets := rawSlot.Find(".match-table__score-cell")
@@ -219,32 +227,83 @@ func scrapeWTA(draw DrawRecord) (SlotSlice, map[string]string) {
 				return true
 			})
 
-			slots.add(Slot{DrawID: draw.ID, Round: round, Position: position, Name: name, Seed: seed, Sets: sets})
-			seeds[name] = seed
+			// Add slot for round 1
+			// For other rounds, update slot with sets, other fields should be the same
+			key := slotKey{Round: round, Position: position}
+			if slot, ok := slotMap[key]; ok {
+				slot.Sets = sets
+			} else {
+				slotMap[key] = &Slot{
+					DrawID:   draw.ID,
+					Round:    round,
+					Position: position,
+					Name:     name,
+					Seed:     seed,
+					Sets:     sets,
+				}
+			}
+
+			// Placeholder final slot
+			if round == roundContainers.Length() {
+				nextRound := round + 1
+				nextKey := slotKey{Round: nextRound, Position: 1}
+				slotMap[nextKey] = &Slot{
+					DrawID:   draw.ID,
+					Round:    nextRound,
+					Position: 1,
+					Name:     "",
+					Seed:     "",
+				}
+			}
+
+			// Check if the player is a winner
+			// WTA site only fills slots when matches are complete, so we fill in the next round
+			// Add slot for the next round
+			if rawSlot.HasClass("is-winner") {
+				nextRound := round + 1
+				nextRoundPosition := (position + 1) / 2
+				nextKey := slotKey{Round: nextRound, Position: nextRoundPosition}
+				slotMap[nextKey] = &Slot{
+					DrawID:   draw.ID,
+					Round:    nextRound,
+					Position: nextRoundPosition,
+					Name:     name,
+					Seed:     seed,
+				}
+			}
 
 			position++
 		})
+	})
 
-		if round == roundContainers.Length() {
-			winner := rc.Find(".match-table__row.is-winner")
-			winnerName, winnerSeed := wtaExtractName(winner)
+	for _, slot := range slotMap {
+		slots.add(*slot)
+	}
 
-			round++
-			slots.add(Slot{DrawID: draw.ID, Round: round, Position: 1, Name: winnerName, Seed: winnerSeed})
+	sort.Slice(slots, func(i, j int) bool {
+		if slots[i].Round == slots[j].Round {
+			return slots[i].Position < slots[j].Position
 		}
+		return slots[i].Round < slots[j].Round
 	})
 
 	return slots, seeds
 }
 
 func wtaExtractName(x *goquery.Selection) (string, string) {
-	name := trim(x.Find(".match-table__player-fullname").Text())
+	data := x.Find(".match-table__player-name")
+
+	if data.Length() == 0 {
+		return "", ""
+	}
+
+	name := trim(data.Find(".match-table__player-fullname").Text())
 
 	if !hasAlphabet(name) {
 		return "", ""
 	}
 
-	seed := trim(x.Find(".match-table__player-seed").Text())
+	seed := trim(data.Find(".match-table__player-seed").Text())
 
 	return name, seed
 }

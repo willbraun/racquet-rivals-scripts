@@ -81,6 +81,7 @@ func TestScrapeWTA(t *testing.T) {
 		}
 
 		delete(seeds, "")
+		delete(uniqueNames, "")
 		assert.Equal(len(uniqueNames), len(seeds))
 	})
 }
