@@ -204,19 +204,30 @@ func scrapeWTA(draw DrawRecord) (SlotSlice, map[string]string) {
 			sets := SetSlice{}
 			rawSets := rawSlot.Find(".match-table__score-cell")
 			rawSets.EachWithBreak(func(i int, set *goquery.Selection) bool {
-				value := trim(set.Text())
+				fields := strings.Fields(set.Text())
+				gameStr := fields[0]
 
-				if value == "." || value == "" {
+				tiebreakStr := ""
+				if len(fields) > 1 {
+					tiebreakStr = fields[1]
+				}
+
+				if gameStr == "." || gameStr == "" {
 					return false
 				}
 
-				games, err := strconv.Atoi(value)
+				games, err := strconv.Atoi(gameStr)
 				if err != nil {
 					log.Println("Error converting games to int:", err)
 				}
 
-				// No tiebreak score shown for WTA
 				tiebreak := 0
+				if tiebreakStr != "" {
+					tiebreak, err = strconv.Atoi(tiebreakStr)
+					if err != nil {
+						log.Println("Error converting tiebreak to int:", err)
+					}
+				}
 
 				sets.add(Set{Number: i + 1, Games: games, Tiebreak: tiebreak})
 
