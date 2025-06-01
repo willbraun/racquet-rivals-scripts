@@ -83,10 +83,10 @@ func scrapeATP(draw DrawRecord) (SlotSlice, map[string]string) {
 	html := scrapeWithProxy(draw.Url)
 
 	// Save the HTML to a file for testing
-	err := saveHTMLToFile(html, "scraped_pages/atp.html")
-	if err != nil {
-		log.Println("Error saving HTML to file:", err)
-	}
+	// err := saveHTMLToFile(html, "scraped_pages/atp.html")
+	// if err != nil {
+	// 	log.Println("Error saving HTML to file:", err)
+	// }
 
 	// Read the HTML from the file for testing
 	// html, err := readHTMLFromFile("scraped_pages/atp.html")
@@ -178,10 +178,10 @@ func scrapeWTA(draw DrawRecord) (SlotSlice, map[string]string) {
 	html := scrapeWithProxy(draw.Url)
 
 	// Save the HTML to a file for testing
-	err := saveHTMLToFile(html, "scraped_pages/wtaRendered.html")
-	if err != nil {
-		log.Println("Error saving HTML to file:", err)
-	}
+	// err := saveHTMLToFile(html, "scraped_pages/wtaRendered.html")
+	// if err != nil {
+	// 	log.Println("Error saving HTML to file:", err)
+	// }
 
 	// Read the HTML from the file for testing
 	// html, err := readHTMLFromFile("scraped_pages/wtaRendered.html")
