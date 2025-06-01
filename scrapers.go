@@ -83,10 +83,10 @@ func scrapeATP(draw DrawRecord) (SlotSlice, map[string]string) {
 	html := scrapeWithProxy(draw.Url)
 
 	// Save the HTML to a file for testing
-	// err := saveHTMLToFile(html, "scraped_pages/atp.html")
-	// if err != nil {
-	// 	log.Println("Error saving HTML to file:", err)
-	// }
+	err := saveHTMLToFile(html, "scraped_pages/atp.html")
+	if err != nil {
+		log.Println("Error saving HTML to file:", err)
+	}
 
 	// Read the HTML from the file for testing
 	// html, err := readHTMLFromFile("scraped_pages/atp.html")
@@ -121,23 +121,31 @@ func scrapeATP(draw DrawRecord) (SlotSlice, map[string]string) {
 			rawSets := rawSlot.Find(".score-item")
 			rawSets.EachWithBreak(func(i int, set *goquery.Selection) bool {
 				scores := set.Find("span")
-				gamesStr := scores.Eq(0).Text()
-				tiebreakStr := scores.Eq(1).Text()
 
+				if scores.Length() == 0 {
+					return false
+				}
+
+				gamesStr := scores.Eq(0).Text()
 				if gamesStr == "" || gamesStr == "-" {
 					return false
 				}
 
 				games, err := strconv.Atoi(gamesStr)
 				if err != nil {
-					log.Println("Error converting games to int:", err)
+					log.Println("ATP - Error converting games to int:", err)
 				}
 
 				tiebreak := 0
-				if tiebreakStr != "" {
+				if scores.Length() > 1 {
+					tiebreakStr := scores.Eq(1).Text()
+					if tiebreakStr == "" || tiebreakStr == "-" {
+						return false
+					}
+
 					tiebreak, err = strconv.Atoi(tiebreakStr)
 					if err != nil {
-						log.Println("Error converting tiebreak to int:", err)
+						log.Println("ATP - Error converting tiebreak to int:", err)
 					}
 				}
 
@@ -170,10 +178,10 @@ func scrapeWTA(draw DrawRecord) (SlotSlice, map[string]string) {
 	html := scrapeWithProxy(draw.Url)
 
 	// Save the HTML to a file for testing
-	// err := saveHTMLToFile(html, "scraped_pages/wtaRendered.html")
-	// if err != nil {
-	// 	log.Println("Error saving HTML to file:", err)
-	// }
+	err := saveHTMLToFile(html, "scraped_pages/wtaRendered.html")
+	if err != nil {
+		log.Println("Error saving HTML to file:", err)
+	}
 
 	// Read the HTML from the file for testing
 	// html, err := readHTMLFromFile("scraped_pages/wtaRendered.html")
@@ -205,27 +213,31 @@ func scrapeWTA(draw DrawRecord) (SlotSlice, map[string]string) {
 			rawSets := rawSlot.Find(".match-table__score-cell")
 			rawSets.EachWithBreak(func(i int, set *goquery.Selection) bool {
 				fields := strings.Fields(set.Text())
-				gameStr := fields[0]
 
-				tiebreakStr := ""
-				if len(fields) > 1 {
-					tiebreakStr = fields[1]
+				if len(fields) == 0 {
+					return false
 				}
 
+				gameStr := trim(fields[0])
 				if gameStr == "." || gameStr == "" {
 					return false
 				}
 
 				games, err := strconv.Atoi(gameStr)
 				if err != nil {
-					log.Println("Error converting games to int:", err)
+					log.Println("WTA - Error converting games to int:", err)
 				}
 
 				tiebreak := 0
-				if tiebreakStr != "" {
+				if len(fields) > 1 {
+					tiebreakStr := trim(fields[1])
+					if tiebreakStr == "" {
+						return false
+					}
+
 					tiebreak, err = strconv.Atoi(tiebreakStr)
 					if err != nil {
-						log.Println("Error converting tiebreak to int:", err)
+						log.Println("WTA - Error converting tiebreak to int:", err)
 					}
 				}
 

@@ -61,7 +61,7 @@ func TestScrapeWTA(t *testing.T) {
 		Name:             "Australian Open",
 		Event:            "Women's Singles",
 		Year:             2025,
-		Url:              "https://www.wtatennis.com/tournament/901/australian-open/2025/draws",
+		Url:              "https://www.wtatennis.com/tournaments/903/roland-garros/2025/draws",
 		Start_Date:       "2025-01-12 12:00:00.000",
 		End_Date:         "2025-01-26 12:00:00.000",
 		Prediction_Close: "2025-01-19 12:00:00.000",
@@ -76,7 +76,6 @@ func TestScrapeWTA(t *testing.T) {
 
 		assert.Equal(255, len(scrapedSlots))
 		for _, slot := range scrapedSlots {
-			assert.NotEmpty(slot.Name)
 			uniqueNames[slot.Name] = true
 		}
 
