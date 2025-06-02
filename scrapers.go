@@ -120,13 +120,15 @@ func scrapeATP(draw DrawRecord) (SlotSlice, map[string]string) {
 			sets := SetSlice{}
 			rawSets := rawSlot.Find(".score-item")
 			rawSets.EachWithBreak(func(i int, set *goquery.Selection) bool {
-				scores := set.Find("span")
+				scores := set.Find("span").Map(func(_ int, span *goquery.Selection) string {
+					return trim(span.Text())
+				})
 
-				if scores.Length() == 0 {
+				if len(scores) == 0 {
 					return false
 				}
 
-				gamesStr := scores.Eq(0).Text()
+				gamesStr := scores[0]
 				if gamesStr == "" || gamesStr == "-" {
 					return false
 				}
@@ -136,13 +138,13 @@ func scrapeATP(draw DrawRecord) (SlotSlice, map[string]string) {
 					log.Println("ATP - Error converting games to int:", err)
 				}
 
-				tiebreak := 0
-				if scores.Length() > 1 {
-					tiebreakStr := scores.Eq(1).Text()
-					if tiebreakStr == "" || tiebreakStr == "-" {
-						return false
-					}
+				tiebreakStr := ""
+				if len(scores) > 1 {
+					tiebreakStr = scores[1]
+				}
 
+				tiebreak := 0
+				if tiebreakStr != "" {
 					tiebreak, err = strconv.Atoi(tiebreakStr)
 					if err != nil {
 						log.Println("ATP - Error converting tiebreak to int:", err)
@@ -212,13 +214,13 @@ func scrapeWTA(draw DrawRecord) (SlotSlice, map[string]string) {
 			sets := SetSlice{}
 			rawSets := rawSlot.Find(".match-table__score-cell")
 			rawSets.EachWithBreak(func(i int, set *goquery.Selection) bool {
-				fields := strings.Fields(set.Text())
+				scores := strings.Fields(set.Text())
 
-				if len(fields) == 0 {
+				if len(scores) == 0 {
 					return false
 				}
 
-				gameStr := trim(fields[0])
+				gameStr := scores[0]
 				if gameStr == "." || gameStr == "" {
 					return false
 				}
@@ -228,13 +230,13 @@ func scrapeWTA(draw DrawRecord) (SlotSlice, map[string]string) {
 					log.Println("WTA - Error converting games to int:", err)
 				}
 
-				tiebreak := 0
-				if len(fields) > 1 {
-					tiebreakStr := trim(fields[1])
-					if tiebreakStr == "" {
-						return false
-					}
+				tiebreakStr := ""
+				if len(scores) > 1 {
+					tiebreakStr = scores[1]
+				}
 
+				tiebreak := 0
+				if tiebreakStr != "" {
 					tiebreak, err = strconv.Atoi(tiebreakStr)
 					if err != nil {
 						log.Println("WTA - Error converting tiebreak to int:", err)
