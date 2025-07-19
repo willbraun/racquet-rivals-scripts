@@ -16,7 +16,13 @@ import (
 	"github.com/PuerkitoBio/goquery"
 )
 
-func scrapeWithProxy(targetURL string) string {
+type Scraper interface {
+	scrape(targetURL string) string
+}
+
+type RealScraper struct{}
+
+func (r *RealScraper) scrape(targetURL string) string {
 	printWithTimestamp("Visiting:", targetURL)
 
 	proxyURL, err := url.Parse(os.Getenv("PROXY_URL"))
@@ -30,6 +36,8 @@ func scrapeWithProxy(targetURL string) string {
 			Proxy:           http.ProxyURL(proxyURL),
 			TLSClientConfig: &tls.Config{InsecureSkipVerify: true},
 		},
+		// Waiting for rendering can take a while so we set a longer timeout
+		Timeout: 600 * time.Second,
 	}
 
 	req, err := http.NewRequest("GET", targetURL, nil)
@@ -41,7 +49,7 @@ func scrapeWithProxy(targetURL string) string {
 	// Bright Data header to wait for is-winner class to appear
 	// Used for WTA draws to indicate that scores and winners have been rendered
 	if strings.Contains(targetURL, "wtatennis.com") {
-		req.Header.Set("x-unblock-expect", "{\"element\": \".match-table__player-name\"}")
+		req.Header.Set("x-unblock-expect", "{\"element\": \".match-table__tie-break\"}")
 	}
 
 	// Exponential backoff retry mechanism
@@ -75,26 +83,11 @@ func scrapeWithProxy(targetURL string) string {
 	return ""
 }
 
-func scrapeATP(draw DrawRecord) (SlotSlice, map[string]string) {
+func scrapeATP(scraper Scraper, draw DrawRecord) (SlotSlice, map[string]string) {
 	slots := SlotSlice{}
 	seeds := make(map[string]string)
 
-	// Real draw URL
-	html := scrapeWithProxy(draw.Url)
-
-	// Save the HTML to a file for testing
-	// err := saveHTMLToFile(html, "scraped_pages/atp.html")
-	// if err != nil {
-	// 	log.Println("Error saving HTML to file:", err)
-	// }
-
-	// Read the HTML from the file for testing
-	// html, err := readHTMLFromFile("scraped_pages/atp.html")
-	// if err != nil {
-	// 	log.Println("Error reading HTML from ATP file:", err)
-	// 	return slots, seeds
-	// }
-
+	html := scraper.scrape(draw.Url)
 	reader := strings.NewReader(html)
 
 	doc, err := goquery.NewDocumentFromReader(reader)
@@ -172,26 +165,11 @@ func scrapeATP(draw DrawRecord) (SlotSlice, map[string]string) {
 	return slots, seeds
 }
 
-func scrapeWTA(draw DrawRecord) (SlotSlice, map[string]string) {
+func scrapeWTA(scraper Scraper, draw DrawRecord) (SlotSlice, map[string]string) {
 	slots := SlotSlice{}
 	seeds := make(map[string]string)
 
-	// Real draw URL
-	html := scrapeWithProxy(draw.Url)
-
-	// Save the HTML to a file for testing
-	// err := saveHTMLToFile(html, "scraped_pages/wtaRendered.html")
-	// if err != nil {
-	// 	log.Println("Error saving HTML to file:", err)
-	// }
-
-	// Read the HTML from the file for testing
-	// html, err := readHTMLFromFile("scraped_pages/wtaRendered.html")
-	// if err != nil {
-	// 	log.Println("Error reading HTML from WTA file:", err)
-	// 	return slots, seeds
-	// }
-
+	html := scraper.scrape(draw.Url)
 	reader := strings.NewReader(html)
 
 	doc, err := goquery.NewDocumentFromReader(reader)

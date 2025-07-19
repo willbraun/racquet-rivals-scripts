@@ -35,16 +35,19 @@ func main() {
 		return
 	}
 
+	scraper := &RealScraper{}
+
 	for _, draw := range draws {
 		currentSlots := getSlots(draw.ID, token)
 		var scrapedSlots SlotSlice
 		var seeds map[string]string
 
-		if draw.Event == "Men's Singles" {
-			scrapedSlots, seeds = scrapeATP(draw)
-		} else if draw.Event == "Women's Singles" {
-			scrapedSlots, seeds = scrapeWTA(draw)
-		} else {
+		switch draw.Event {
+		case "Men's Singles":
+			scrapedSlots, seeds = scrapeATP(scraper, draw)
+		case "Women's Singles":
+			scrapedSlots, seeds = scrapeWTA(scraper, draw)
+		default:
 			log.Println("Invalid event:", draw.Event)
 			continue
 		}

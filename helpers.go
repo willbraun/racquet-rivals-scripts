@@ -192,12 +192,6 @@ func getUpdates(scraped SlotSlice, current SlotSlice, seeds map[string]string) (
 	return newSlots, updatedSlots, newSets, updatedSets
 }
 
-// Example usage:
-// err:= saveHTMLToFile(html, "scraped_pages/wtaRendered.html")
-//
-//	if err != nil {
-//	  log.Println("Error saving HTML to file:", err)
-//	}
 func saveHTMLToFile(html, filename string) error {
 	return os.WriteFile(filename, []byte(html), 0644)
 }
