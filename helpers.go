@@ -203,3 +203,55 @@ func readHTMLFromFile(filename string) (string, error) {
 	}
 	return string(data), nil
 }
+
+type MockScraper struct{}
+
+func (m *MockScraper) scrape(targetURL string) string {
+	if strings.Contains(targetURL, "atptour.com") {
+		html, err := readHTMLFromFile("scraped_pages/atp.html")
+		if err != nil {
+			log.Println("Error reading HTML from ATP file:", err)
+			return ""
+		}
+		return html
+	} else if strings.Contains(targetURL, "wtatennis.com") {
+		html, err := readHTMLFromFile("scraped_pages/wta.html")
+		if err != nil {
+			log.Println("Error reading HTML from WTA file:", err)
+			return ""
+		}
+		return html
+	}
+	log.Println("Unknown URL:", targetURL)
+	return ""
+}
+
+type RealScraperSaveFile struct{}
+
+func (s *RealScraperSaveFile) scrape(targetURL string) string {
+	realScraper := &RealScraper{}
+	html := realScraper.scrape(targetURL)
+
+	if strings.Contains(targetURL, "atptour.com") {
+		err := saveHTMLToFile(html, "scraped_pages/atp.html")
+		if err != nil {
+			log.Println("Error saving ATP HTML to file:", err)
+		}
+	} else if strings.Contains(targetURL, "wtatennis.com") {
+		err := saveHTMLToFile(html, "scraped_pages/wta.html")
+		if err != nil {
+			log.Println("Error saving WTA HTML to file:", err)
+		}
+	}
+
+	return html
+}
+
+func getScraper(draw DrawRecord) Scraper {
+	if os.Getenv("SAVE_HTML_TO_FILE") == "atp" && strings.Contains(draw.Url, "atptour.com") {
+		return &RealScraperSaveFile{}
+	} else if os.Getenv("SAVE_HTML_TO_FILE") == "wta" && strings.Contains(draw.Url, "wtatennis.com") {
+		return &RealScraperSaveFile{}
+	}
+	return &MockScraper{}
+}

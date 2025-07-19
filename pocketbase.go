@@ -123,6 +123,26 @@ func postSlots(slots SlotSlice, token string) {
 		}
 		defer res.Body.Close()
 
+		// Create a struct to hold the response
+		var responseData struct {
+			ID string `json:"id"`
+		}
+
+		// Decode the JSON response
+		err = json.NewDecoder(res.Body).Decode(&responseData)
+		if err != nil {
+			log.Println("Error decoding response:", err)
+			continue
+		}
+
+		// Update each set's DrawSlotID with the new slot ID
+		for i := range slot.Sets {
+			slot.Sets[i].DrawSlotID = responseData.ID
+		}
+
+		// Post sets for the new slot
+		postSets(slot.Sets, token)
+
 		printWithTimestamp(res.Status, "added slot", slot)
 	}
 }

@@ -2,65 +2,11 @@ package main
 
 import (
 	"log"
-	"os"
-	"strings"
 	"testing"
 
 	"github.com/joho/godotenv"
 	"github.com/stretchr/testify/assert"
 )
-
-type MockScraper struct{}
-
-func (m *MockScraper) scrape(targetURL string) string {
-	if strings.Contains(targetURL, "atptour.com") {
-		html, err := readHTMLFromFile("scraped_pages/atp.html")
-		if err != nil {
-			log.Println("Error reading HTML from ATP file:", err)
-			return ""
-		}
-		return html
-	} else if strings.Contains(targetURL, "wtatennis.com") {
-		html, err := readHTMLFromFile("scraped_pages/wta.html")
-		if err != nil {
-			log.Println("Error reading HTML from WTA file:", err)
-			return ""
-		}
-		return html
-	}
-	log.Println("Unknown URL:", targetURL)
-	return ""
-}
-
-type RealScraperSaveFile struct{}
-
-func (s *RealScraperSaveFile) scrape(targetURL string) string {
-	realScraper := &RealScraper{}
-	html := realScraper.scrape(targetURL)
-
-	if strings.Contains(targetURL, "atptour.com") {
-		err := saveHTMLToFile(html, "scraped_pages/atp.html")
-		if err != nil {
-			log.Println("Error saving ATP HTML to file:", err)
-		}
-	} else if strings.Contains(targetURL, "wtatennis.com") {
-		err := saveHTMLToFile(html, "scraped_pages/wta.html")
-		if err != nil {
-			log.Println("Error saving WTA HTML to file:", err)
-		}
-	}
-
-	return html
-}
-
-func getScraper(draw DrawRecord) Scraper {
-	if os.Getenv("SAVE_HTML_TO_FILE") == "atp" && strings.Contains(draw.Url, "atptour.com") {
-		return &RealScraperSaveFile{}
-	} else if os.Getenv("SAVE_HTML_TO_FILE") == "wta" && strings.Contains(draw.Url, "wtatennis.com") {
-		return &RealScraperSaveFile{}
-	}
-	return &MockScraper{}
-}
 
 func TestScrapeATP(t *testing.T) {
 	t.Parallel()
@@ -122,7 +68,7 @@ func TestScrapeATP(t *testing.T) {
 				Games:    6,
 				Tiebreak: 2,
 			},
-		}, scrapedSlots[len(scrapedSlots)-3].Sets, "Slot R7P1 should have correct sets")
+		}, scrapedSlots[len(scrapedSlots)-3].Sets, "Sinner in final should have correct sets")
 	})
 }
 
@@ -168,6 +114,6 @@ func TestScrapeWTA(t *testing.T) {
 				Games:    6,
 				Tiebreak: 2,
 			},
-		}, scrapedSlots[len(scrapedSlots)-11].Sets, "Slot R6P3 should have correct sets")
+		}, scrapedSlots[len(scrapedSlots)-11].Sets, "Andreeva in quarterfinal should have correct sets")
 	})
 }
