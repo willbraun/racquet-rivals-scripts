@@ -59,8 +59,8 @@ func (r *RealScraper) scrape(targetURL string) string {
 	for i := range maxRetries {
 		printWithTimestamp("Attempt:", i+1)
 		resp, err := client.Do(req)
-		if err != nil || resp.StatusCode != 200 {
-			log.Println(fmt.Sprintf("Error making request - %s:", targetURL), err, "Status Code:", resp.Status, "Response Body:", resp.Body)
+		if err != nil {
+			log.Println(fmt.Sprintf("Error making request - %s:", targetURL), err)
 			if i < maxRetries-1 {
 				time.Sleep(backoff)
 				backoff *= 2
@@ -68,6 +68,18 @@ func (r *RealScraper) scrape(targetURL string) string {
 			}
 			return ""
 		}
+
+		if resp.StatusCode != 200 {
+			log.Println(fmt.Sprintf("HTTP error - %s:", targetURL), "Status Code:", resp.Status)
+			resp.Body.Close() // Close the body before continuing
+			if i < maxRetries-1 {
+				time.Sleep(backoff)
+				backoff *= 2
+				continue
+			}
+			return ""
+		}
+
 		defer resp.Body.Close()
 
 		body, err := io.ReadAll(resp.Body)
