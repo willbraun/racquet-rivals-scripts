@@ -81,12 +81,13 @@ func TestScrapeWTA(t *testing.T) {
 	}
 
 	// Use a completed draw for testing
+	// Should be in format: https://www.wtatennis.com/tournaments/{tournament_id}/{year}/draws
 	draw := DrawRecord{
 		ID:               "test_womens_draw_id",
 		Name:             "Australian Open",
 		Event:            "Women's Singles",
 		Year:             2025,
-		Url:              "https://www.wtatennis.com/tournaments/wimbledon/draws",
+		Url:              "https://www.wtatennis.com/tournaments/904/wimbledon/2025/draws",
 		Start_Date:       "2025-01-12 12:00:00.000",
 		End_Date:         "2025-01-26 12:00:00.000",
 		Prediction_Close: "2025-01-19 12:00:00.000",
