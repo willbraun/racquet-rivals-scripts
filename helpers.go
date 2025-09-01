@@ -8,6 +8,9 @@ import (
 	"sort"
 	"strings"
 	"time"
+	"unicode"
+
+	"golang.org/x/text/unicode/norm"
 )
 
 func printWithTimestamp(a ...any) {
@@ -64,6 +67,32 @@ func toSlotSlice(sr []SlotRecord) SlotSlice {
 		})
 	}
 	return result
+}
+
+func cleanScrapedResults(scraped SlotSlice, seeds map[string]string) (SlotSlice, map[string]string) {
+	sort.Slice(scraped, func(i, j int) bool {
+		if scraped[i].Round == scraped[j].Round {
+			return scraped[i].Position < scraped[j].Position
+		}
+		return scraped[i].Round < scraped[j].Round
+	})
+
+	delete(seeds, "")
+	return scraped, seeds
+}
+
+func removeAccents(s string) string {
+	// Normalize to decomposed form (NFD)
+	t := norm.NFD.String(s)
+
+	// Filter out all combining marks
+	sb := strings.Builder{}
+	for _, r := range t {
+		if !unicode.Is(unicode.Mn, r) { // Mn = Mark, nonspacing
+			sb.WriteRune(r)
+		}
+	}
+	return sb.String()
 }
 
 func getUpdates(scraped SlotSlice, current SlotSlice, seeds map[string]string) (SlotSlice, SlotSlice, SetSlice, SetSlice) {

@@ -124,6 +124,13 @@ func (m *MockScraper) scrape(targetURL string) string {
 			return ""
 		}
 		return html
+	} else if strings.Contains(targetURL, "live-tennis.eu/en/wta-singles-draws") {
+		html, err := readHTMLFromFile("scraped_pages/wta_live_tennis_eu.html")
+		if err != nil {
+			log.Println("Error reading HTML from WTA Live Tennis EU file:", err)
+			return ""
+		}
+		return html
 	}
 	log.Println("Unknown URL:", targetURL)
 	return ""
@@ -145,6 +152,11 @@ func (s *RealScraperSaveFile) scrape(targetURL string) string {
 		if err != nil {
 			log.Println("Error saving WTA HTML to file:", err)
 		}
+	} else if strings.Contains(targetURL, "live-tennis.eu/en/wta-singles-draws") {
+		err := saveHTMLToFile(html, "scraped_pages/wta_live_tennis_eu.html")
+		if err != nil {
+			log.Println("Error saving WTA Live Tennis EU HTML to file:", err)
+		}
 	}
 
 	return html
@@ -154,6 +166,8 @@ func getScraper(draw DrawRecord) Scraper {
 	if os.Getenv("SAVE_HTML_TO_FILE") == "atp" && strings.Contains(draw.Url, "atptour.com") {
 		return &RealScraperSaveFile{}
 	} else if os.Getenv("SAVE_HTML_TO_FILE") == "wta" && strings.Contains(draw.Url, "wtatennis.com") {
+		return &RealScraperSaveFile{}
+	} else if os.Getenv("SAVE_HTML_TO_FILE") == "wta_live_tennis_eu" && strings.Contains(draw.Url, "live-tennis.eu/en/wta-singles-draws") {
 		return &RealScraperSaveFile{}
 	}
 	return &MockScraper{}

@@ -1,15 +1,27 @@
 package main
 
 import (
+	"fmt"
 	"log"
-	"sort"
+	"slices"
 	"strconv"
 	"strings"
+	"unicode"
 
 	"github.com/PuerkitoBio/goquery"
 )
 
 func scrapeWTA(scraper Scraper, draw DrawRecord) (SlotSlice, map[string]string) {
+	if strings.Contains(draw.Url, "wtatennis.com") {
+		return scrapeWtaOfficial(scraper, draw)
+	} else if strings.Contains(draw.Url, "live-tennis.eu/en/wta-singles-draws") {
+		return scrapeWtaLiveTennisEu(scraper, draw)
+	}
+	log.Println("Unsupported WTA site:", draw.Url)
+	return SlotSlice{}, nil
+}
+
+func scrapeWtaOfficial(scraper Scraper, draw DrawRecord) (SlotSlice, map[string]string) {
 	slots := SlotSlice{}
 	seeds := make(map[string]string)
 
@@ -30,7 +42,7 @@ func scrapeWTA(scraper Scraper, draw DrawRecord) (SlotSlice, map[string]string) 
 
 		rawSlots := rc.Find(".match-table__row")
 		rawSlots.Each(func(_ int, rawSlot *goquery.Selection) {
-			name, seed := wtaExtractName(rawSlot)
+			name, seed := wtaOfficialExtractName(rawSlot)
 			seeds[name] = seed
 
 			sets := SetSlice{}
@@ -123,17 +135,12 @@ func scrapeWTA(scraper Scraper, draw DrawRecord) (SlotSlice, map[string]string) 
 		slots.add(*slot)
 	}
 
-	sort.Slice(slots, func(i, j int) bool {
-		if slots[i].Round == slots[j].Round {
-			return slots[i].Position < slots[j].Position
-		}
-		return slots[i].Round < slots[j].Round
-	})
+	cleanedSlots, cleanedSeeds := cleanScrapedResults(slots, seeds)
 
-	return slots, seeds
+	return cleanedSlots, cleanedSeeds
 }
 
-func wtaExtractName(x *goquery.Selection) (string, string) {
+func wtaOfficialExtractName(x *goquery.Selection) (string, string) {
 	data := x.Find(".match-table__player-name")
 
 	if data.Length() == 0 {
@@ -149,4 +156,131 @@ func wtaExtractName(x *goquery.Selection) (string, string) {
 	seed := trim(data.Find(".match-table__player-seed").Text())
 
 	return name, seed
+}
+
+func scrapeWtaLiveTennisEu(scraper Scraper, draw DrawRecord) (SlotSlice, map[string]string) {
+	slots := SlotSlice{}
+	seeds := make(map[string]string)
+
+	html := scraper.scrape(draw.Url)
+	reader := strings.NewReader(html)
+
+	doc, err := goquery.NewDocumentFromReader(reader)
+	if err != nil {
+		log.Println(err)
+	}
+
+	majorNames := []string{"Australian Open", "Roland Garros", "Wimbledon", "US Open"}
+	var htmlButtonId string
+	var exists bool
+
+	doc.Find("figcaption").EachWithBreak(func(_ int, selection *goquery.Selection) bool {
+		text := selection.Text()
+		if slices.Contains(majorNames, text) {
+			htmlButtonId, exists = selection.Closest("button").Attr("id")
+			return false // found the first major, break
+		}
+		return true // keep searching
+	})
+	if !exists {
+		log.Println("WTA - Live Tennis EU Draw ID not found")
+		return nil, nil
+	}
+
+	htmlDrawId := "dr" + htmlButtonId[len(htmlButtonId)-1:]
+	htmlDraw := doc.Find("#" + htmlDrawId)
+	htmlDrawRows := htmlDraw.ChildrenFiltered("table").ChildrenFiltered("tbody").ChildrenFiltered("tr")
+
+	rowspanToRoundMap := map[string]int{
+		"1":  1,
+		"2":  2,
+		"4":  3,
+		"8":  4,
+		"16": 5,
+		"32": 6,
+		"64": 7,
+	}
+	positionByRound := make(map[int]int)
+	winnerName := ""
+	winnerSeed := ""
+
+	htmlDrawRows.Each(func(i int, row *goquery.Selection) {
+		matches := row.ChildrenFiltered("td")
+		matches.Each(func(j int, match *goquery.Selection) {
+			round := rowspanToRoundMap[match.AttrOr("rowspan", "1")]
+
+			rawSlots := match.Find("tr")
+			rawSlots.Each(func(k int, slot *goquery.Selection) {
+				text := slot.Children().Eq(1)
+				name := strings.TrimSpace(text.Text())
+				seed := ""
+				span := text.ChildrenFiltered("span").First()
+				if span.Length() > 0 {
+					seed = strings.TrimSpace(span.Text())
+					name = strings.TrimSpace(strings.ReplaceAll(name, seed, ""))
+				}
+
+				formattedName := name
+				if name != "" && name != "-" {
+					firstName := strings.Split(name, " ")[0]
+					lastName := strings.Join(strings.Split(name, " ")[1:], " ")
+					firstInitial := string(unicode.ToUpper(rune(firstName[0])))
+					formattedName = removeAccents(fmt.Sprintf("%s. %s", firstInitial, lastName))
+
+					seeds[formattedName] = seed
+				}
+
+				sets := SetSlice{}
+				rawSets := slot.Children().Slice(2, goquery.ToEnd)
+				rawSets.EachWithBreak(func(l int, set *goquery.Selection) bool {
+					text := set.Text() // contains games and tiebreak as one string
+
+					if text == "Ret." || text == "" {
+						return false
+					}
+
+					runes := []rune(text)
+					var gamesStr string
+					var tiebreakStr string
+
+					if len(runes) > 0 {
+						gamesStr = string(runes[0])
+						if len(runes) > 1 {
+							tiebreakStr = string(runes[1:])
+						}
+					}
+
+					games, err := strconv.Atoi(gamesStr)
+					if err != nil {
+						log.Println("WTA Live Tennis EU - Error converting games to int:", err)
+					}
+
+					tiebreak := 0
+					if tiebreakStr != "" {
+						tiebreak, err = strconv.Atoi(tiebreakStr)
+						if err != nil {
+							log.Println("WTA Live Tennis EU - Error converting tiebreak to int:", err)
+						}
+					}
+
+					sets = append(sets, Set{Number: l + 1, Games: games, Tiebreak: tiebreak})
+					return true
+				})
+
+				positionByRound[round]++
+				slots.add(Slot{DrawID: draw.ID, Round: round, Position: positionByRound[round], Name: formattedName, Seed: seed, Sets: sets})
+
+				if round == 7 && text.ChildrenFiltered("b").Length() > 0 {
+					winnerName = formattedName
+					winnerSeed = seed
+				}
+			})
+		})
+	})
+
+	slots.add(Slot{DrawID: draw.ID, Round: 8, Position: 1, Name: winnerName, Seed: winnerSeed})
+
+	cleanedSlots, cleanedSeeds := cleanScrapedResults(slots, seeds)
+
+	return cleanedSlots, cleanedSeeds
 }

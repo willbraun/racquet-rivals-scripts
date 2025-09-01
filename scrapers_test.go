@@ -72,6 +72,56 @@ func TestScrapeATP(t *testing.T) {
 	})
 }
 
+func TestScrapeWTALiveTennisEU(t *testing.T) {
+	t.Parallel()
+
+	err := godotenv.Load()
+	if err != nil {
+		log.Println("Error loading .env file,", err)
+	}
+
+	// Scraping real URL will pull current WTA tournament and future tournaments
+	draw := DrawRecord{
+		ID:               "test_womens_draw_id",
+		Name:             "US Open",
+		Event:            "Women's Singles",
+		Year:             2025,
+		Url:              "https://live-tennis.eu/en/wta-singles-draws",
+		Start_Date:       "2025-01-12 12:00:00.000",
+		End_Date:         "2025-01-26 12:00:00.000",
+		Prediction_Close: "2025-01-19 12:00:00.000",
+		Size:             128,
+	}
+
+	t.Run("Scrape WTA - Live Tennis EU", func(t *testing.T) {
+		scrapedSlots, seeds := scrapeWTA(getScraper(draw), draw)
+		assert := assert.New(t)
+
+		assert.Equal(255, len(scrapedSlots))
+
+		// usually 128, 2 "X. Wangs" in 2025 US Open
+		assert.Equal(127, len(seeds))
+
+		assert.Equal(SetSlice{
+			Set{
+				Number:   1,
+				Games:    6,
+				Tiebreak: 0,
+			},
+			Set{
+				Number:   2,
+				Games:    2,
+				Tiebreak: 0,
+			},
+			Set{
+				Number:   3,
+				Games:    7,
+				Tiebreak: 11,
+			},
+		}, scrapedSlots[14].Sets, "Eala in R1 has correct sets")
+	})
+}
+
 // func TestScrapeWTA(t *testing.T) {
 // 	t.Parallel()
 
