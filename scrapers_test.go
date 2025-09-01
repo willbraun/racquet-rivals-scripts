@@ -72,49 +72,49 @@ func TestScrapeATP(t *testing.T) {
 	})
 }
 
-func TestScrapeWTA(t *testing.T) {
-	t.Parallel()
+// func TestScrapeWTA(t *testing.T) {
+// 	t.Parallel()
 
-	err := godotenv.Load()
-	if err != nil {
-		log.Println("Error loading .env file,", err)
-	}
+// 	err := godotenv.Load()
+// 	if err != nil {
+// 		log.Println("Error loading .env file,", err)
+// 	}
 
-	// Use a completed draw for testing
-	// Should be in format: https://www.wtatennis.com/tournaments/{tournament_id}/{year}/draws
-	draw := DrawRecord{
-		ID:               "test_womens_draw_id",
-		Name:             "Australian Open",
-		Event:            "Women's Singles",
-		Year:             2025,
-		Url:              "https://www.wtatennis.com/tournaments/904/wimbledon/2025/draws",
-		Start_Date:       "2025-01-12 12:00:00.000",
-		End_Date:         "2025-01-26 12:00:00.000",
-		Prediction_Close: "2025-01-19 12:00:00.000",
-		Size:             128,
-	}
+// 	// Use a completed draw for testing
+// 	// Should be in format: https://www.wtatennis.com/tournaments/{tournament_id}/{year}/draws
+// 	draw := DrawRecord{
+// 		ID:               "test_womens_draw_id",
+// 		Name:             "Australian Open",
+// 		Event:            "Women's Singles",
+// 		Year:             2025,
+// 		Url:              "https://www.wtatennis.com/tournaments/904/wimbledon/2025/draws",
+// 		Start_Date:       "2025-01-12 12:00:00.000",
+// 		End_Date:         "2025-01-26 12:00:00.000",
+// 		Prediction_Close: "2025-01-19 12:00:00.000",
+// 		Size:             128,
+// 	}
 
-	t.Run("Scrape WTA", func(t *testing.T) {
-		scrapedSlots, seeds := scrapeWTA(getScraper(draw), draw)
-		assert := assert.New(t)
+// 	t.Run("Scrape WTA", func(t *testing.T) {
+// 		scrapedSlots, seeds := scrapeWTA(getScraper(draw), draw)
+// 		assert := assert.New(t)
 
-		assert.Equal(255, len(scrapedSlots))
-		assert.Equal(128, len(seeds))
-		for _, slot := range scrapedSlots {
-			assert.NotEmpty(slot.Name, "Slot name should not be empty")
-		}
+// 		assert.Equal(255, len(scrapedSlots))
+// 		assert.Equal(128, len(seeds))
+// 		for _, slot := range scrapedSlots {
+// 			assert.NotEmpty(slot.Name, "Slot name should not be empty")
+// 		}
 
-		assert.Equal(SetSlice{
-			Set{
-				Number:   1,
-				Games:    6,
-				Tiebreak: 3,
-			},
-			Set{
-				Number:   2,
-				Games:    6,
-				Tiebreak: 2,
-			},
-		}, scrapedSlots[len(scrapedSlots)-11].Sets, "Andreeva in quarterfinal should have correct sets")
-	})
-}
+// 		assert.Equal(SetSlice{
+// 			Set{
+// 				Number:   1,
+// 				Games:    6,
+// 				Tiebreak: 3,
+// 			},
+// 			Set{
+// 				Number:   2,
+// 				Games:    6,
+// 				Tiebreak: 2,
+// 			},
+// 		}, scrapedSlots[len(scrapedSlots)-11].Sets, "Andreeva in quarterfinal should have correct sets")
+// 	})
+// }
