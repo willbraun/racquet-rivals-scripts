@@ -11,21 +11,24 @@ import (
 	"github.com/PuerkitoBio/goquery"
 )
 
-func scrapeWTA(scraper Scraper, draw DrawRecord) (SlotSlice, map[string]string) {
+func scrapeWTA(scraper Scraper, draw DrawRecord) (SlotSlice, map[string]string, error) {
 	if strings.Contains(draw.Url, "wtatennis.com") {
 		return scrapeWtaOfficial(scraper, draw)
 	} else if strings.Contains(draw.Url, "live-tennis.eu/en/wta-singles-draws") {
 		return scrapeWtaLiveTennisEu(scraper, draw)
 	}
 	log.Println("Unsupported WTA site:", draw.Url)
-	return SlotSlice{}, nil
+	return SlotSlice{}, nil, fmt.Errorf("unsupported WTA site: %s", draw.Url)
 }
 
-func scrapeWtaOfficial(scraper Scraper, draw DrawRecord) (SlotSlice, map[string]string) {
+func scrapeWtaOfficial(scraper Scraper, draw DrawRecord) (SlotSlice, map[string]string, error) {
 	slots := SlotSlice{}
 	seeds := make(map[string]string)
 
-	html := scraper.scrape(draw.Url)
+	html, err := scraper.scrape(draw.Url)
+	if err != nil {
+		return SlotSlice{}, nil, fmt.Errorf("error scraping WTA: %w", err)
+	}
 	reader := strings.NewReader(html)
 
 	doc, err := goquery.NewDocumentFromReader(reader)
@@ -137,7 +140,7 @@ func scrapeWtaOfficial(scraper Scraper, draw DrawRecord) (SlotSlice, map[string]
 
 	cleanedSlots, cleanedSeeds := cleanScrapedResults(slots, seeds)
 
-	return cleanedSlots, cleanedSeeds
+	return cleanedSlots, cleanedSeeds, nil
 }
 
 func wtaOfficialExtractName(x *goquery.Selection) (string, string) {
@@ -158,11 +161,14 @@ func wtaOfficialExtractName(x *goquery.Selection) (string, string) {
 	return name, seed
 }
 
-func scrapeWtaLiveTennisEu(scraper Scraper, draw DrawRecord) (SlotSlice, map[string]string) {
+func scrapeWtaLiveTennisEu(scraper Scraper, draw DrawRecord) (SlotSlice, map[string]string, error) {
 	slots := SlotSlice{}
 	seeds := make(map[string]string)
 
-	html := scraper.scrape(draw.Url)
+	html, err := scraper.scrape(draw.Url)
+	if err != nil {
+		return SlotSlice{}, nil, fmt.Errorf("error scraping WTA Live Tennis EU: %w", err)
+	}
 	reader := strings.NewReader(html)
 
 	doc, err := goquery.NewDocumentFromReader(reader)
@@ -184,7 +190,7 @@ func scrapeWtaLiveTennisEu(scraper Scraper, draw DrawRecord) (SlotSlice, map[str
 	})
 	if !exists {
 		log.Println("WTA - Live Tennis EU Draw ID not found")
-		return nil, nil
+		return SlotSlice{}, nil, fmt.Errorf("WTA Live Tennis EU draw ID not found")
 	}
 
 	htmlDrawId := "dr" + htmlButtonId[len(htmlButtonId)-1:]
@@ -282,5 +288,5 @@ func scrapeWtaLiveTennisEu(scraper Scraper, draw DrawRecord) (SlotSlice, map[str
 
 	cleanedSlots, cleanedSeeds := cleanScrapedResults(slots, seeds)
 
-	return cleanedSlots, cleanedSeeds
+	return cleanedSlots, cleanedSeeds, nil
 }

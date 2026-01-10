@@ -13,20 +13,20 @@ import (
 )
 
 type Scraper interface {
-	scrape(targetURL string) string
+	scrape(targetURL string) (string, error)
 }
 
 // Real scraper implementation
 
 type RealScraper struct{}
 
-func (r *RealScraper) scrape(targetURL string) string {
+func (r *RealScraper) scrape(targetURL string) (string, error) {
 	printWithTimestamp("Visiting:", targetURL)
 
 	proxyURL, err := url.Parse(os.Getenv("PROXY_URL"))
 	if err != nil {
 		log.Println(fmt.Sprintf("Error parsing proxy URL - %s:", targetURL), err)
-		return ""
+		return "", fmt.Errorf("error parsing proxy URL: %w", err)
 	}
 
 	client := &http.Client{
@@ -41,7 +41,7 @@ func (r *RealScraper) scrape(targetURL string) string {
 	req, err := http.NewRequest("GET", targetURL, nil)
 	if err != nil {
 		log.Println("Error creating request:", err)
-		return ""
+		return "", fmt.Errorf("error creating request: %w", err)
 	}
 
 	// Bright Data header to wait for is-winner class to appear
@@ -64,7 +64,7 @@ func (r *RealScraper) scrape(targetURL string) string {
 				backoff *= 2
 				continue
 			}
-			return ""
+			return "", fmt.Errorf("error making request after %d retries: %w", maxRetries, err)
 		}
 
 		if resp.StatusCode != 200 {
@@ -75,7 +75,7 @@ func (r *RealScraper) scrape(targetURL string) string {
 				backoff *= 2
 				continue
 			}
-			return ""
+			return "", fmt.Errorf("HTTP error: status code %d", resp.StatusCode)
 		}
 
 		defer resp.Body.Close()
@@ -83,14 +83,14 @@ func (r *RealScraper) scrape(targetURL string) string {
 		body, err := io.ReadAll(resp.Body)
 		if err != nil {
 			log.Println(fmt.Sprintf("Error reading response body - %s:", targetURL), err)
-			return ""
+			return "", fmt.Errorf("error reading response body: %w", err)
 		}
 
 		printWithTimestamp("Finished scraping:", targetURL)
-		return string(body)
+		return string(body), nil
 	}
 
-	return ""
+	return "", fmt.Errorf("failed to scrape after %d retries", maxRetries)
 }
 
 // Scrapers for testing
@@ -109,38 +109,41 @@ func readHTMLFromFile(filename string) (string, error) {
 
 type MockScraper struct{}
 
-func (m *MockScraper) scrape(targetURL string) string {
+func (m *MockScraper) scrape(targetURL string) (string, error) {
 	if strings.Contains(targetURL, "atptour.com") {
 		html, err := readHTMLFromFile("scraped_pages/atp.html")
 		if err != nil {
 			log.Println("Error reading HTML from ATP file:", err)
-			return ""
+			return "", fmt.Errorf("error reading ATP HTML file: %w", err)
 		}
-		return html
+		return html, nil
 	} else if strings.Contains(targetURL, "wtatennis.com") {
 		html, err := readHTMLFromFile("scraped_pages/wta.html")
 		if err != nil {
 			log.Println("Error reading HTML from WTA file:", err)
-			return ""
+			return "", fmt.Errorf("error reading WTA HTML file: %w", err)
 		}
-		return html
+		return html, nil
 	} else if strings.Contains(targetURL, "live-tennis.eu/en/wta-singles-draws") {
 		html, err := readHTMLFromFile("scraped_pages/wta_live_tennis_eu.html")
 		if err != nil {
 			log.Println("Error reading HTML from WTA Live Tennis EU file:", err)
-			return ""
+			return "", fmt.Errorf("error reading WTA Live Tennis EU HTML file: %w", err)
 		}
-		return html
+		return html, nil
 	}
 	log.Println("Unknown URL:", targetURL)
-	return ""
+	return "", fmt.Errorf("unknown URL: %s", targetURL)
 }
 
 type RealScraperSaveFile struct{}
 
-func (s *RealScraperSaveFile) scrape(targetURL string) string {
+func (s *RealScraperSaveFile) scrape(targetURL string) (string, error) {
 	realScraper := &RealScraper{}
-	html := realScraper.scrape(targetURL)
+	html, err := realScraper.scrape(targetURL)
+	if err != nil {
+		return "", err
+	}
 
 	if strings.Contains(targetURL, "atptour.com") {
 		err := saveHTMLToFile(html, "scraped_pages/atp.html")
@@ -159,7 +162,7 @@ func (s *RealScraperSaveFile) scrape(targetURL string) string {
 		}
 	}
 
-	return html
+	return html, nil
 }
 
 func getScraper(draw DrawRecord) Scraper {

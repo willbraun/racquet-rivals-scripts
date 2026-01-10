@@ -1,6 +1,7 @@
 package main
 
 import (
+	"flag"
 	"log"
 	"os"
 	"strings"
@@ -27,7 +28,20 @@ func main() {
 		}
 	}
 
+	isCheck := flag.Bool("check", false, "Scraper health check mode")
+	flag.Parse()
+
 	token := login()
+	scraper := &MockScraper{}
+
+	if *isCheck {
+		atpDraw := getLatestDrawByEvent("Men's Singles", token)
+		wtaDraw := getLatestDrawByEvent("Women's Singles", token)
+		recorder := &RealHealthCheckRecorder{}
+		performHealthCheck(scraper, recorder, atpDraw, wtaDraw, token)
+		return
+	}
+
 	draws := getDraws(token)
 
 	if len(draws) == 0 {
@@ -35,20 +49,24 @@ func main() {
 		return
 	}
 
-	scraper := &RealScraper{}
-
 	for _, draw := range draws {
 		currentSlots := getSlots(draw.ID, token)
 		var scrapedSlots SlotSlice
 		var seeds map[string]string
+		var err error
 
 		switch draw.Event {
 		case "Men's Singles":
-			scrapedSlots, seeds = scrapeATP(scraper, draw)
+			scrapedSlots, seeds, err = scrapeATP(scraper, draw)
 		case "Women's Singles":
-			scrapedSlots, seeds = scrapeWTA(scraper, draw)
+			scrapedSlots, seeds, err = scrapeWTA(scraper, draw)
 		default:
 			log.Println("Invalid event:", draw.Event)
+			continue
+		}
+
+		if err != nil {
+			log.Printf("Error scraping %s %s %d: %v", draw.Name, draw.Event, draw.Year, err)
 			continue
 		}
 

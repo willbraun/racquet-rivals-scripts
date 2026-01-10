@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"log"
 	"strconv"
 	"strings"
@@ -8,11 +9,14 @@ import (
 	"github.com/PuerkitoBio/goquery"
 )
 
-func scrapeATP(scraper Scraper, draw DrawRecord) (SlotSlice, map[string]string) {
+func scrapeATP(scraper Scraper, draw DrawRecord) (SlotSlice, map[string]string, error) {
 	slots := SlotSlice{}
 	seeds := make(map[string]string)
 
-	html := scraper.scrape(draw.Url)
+	html, err := scraper.scrape(draw.Url)
+	if err != nil {
+		return SlotSlice{}, nil, fmt.Errorf("error scraping ATP: %w", err)
+	}
 	reader := strings.NewReader(html)
 
 	doc, err := goquery.NewDocumentFromReader(reader)
@@ -87,5 +91,5 @@ func scrapeATP(scraper Scraper, draw DrawRecord) (SlotSlice, map[string]string) 
 	winnerSeed := trim(winner.Find("span").Text())
 	slots.add(Slot{DrawID: draw.ID, Round: round, Position: 1, Name: winnerName, Seed: winnerSeed})
 
-	return slots, seeds
+	return slots, seeds, nil
 }

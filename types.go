@@ -120,3 +120,9 @@ type CreateUpdateSetReq struct {
 	Games      int    `json:"games"`
 	Tiebreak   int    `json:"tiebreak"`
 }
+
+type HealthCheckReq struct {
+	DrawType string `json:"draw_type"`
+	DrawUrl  string `json:"draw_url"`
+	Error    string `json:"error"`
+}

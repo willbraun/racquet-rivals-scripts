@@ -83,6 +83,32 @@ func getDraws(token string) []DrawRecord {
 	return drawRes.Items
 }
 
+func getLatestDrawByEvent(event string, token string) *DrawRecord {
+	filter := fmt.Sprintf(`(event="%s"&&url!="")`, event)
+	encodedFilter := url.QueryEscape(filter)
+	pocketbaseUrl := fmt.Sprintf(`%s/api/collections/draw/records?filter=%s&sort=-start_date&perPage=1&fields=id,name,event,year,url,start_date,end_date,prediction_close,size`, os.Getenv("BASE_URL"), encodedFilter)
+
+	res, err := makeHTTPRequest("GET", pocketbaseUrl, token, nil)
+	if err != nil {
+		log.Println(err)
+		return nil
+	}
+	defer res.Body.Close()
+
+	drawRes := &DrawRes{}
+	derr := json.NewDecoder(res.Body).Decode(drawRes)
+	if derr != nil {
+		log.Println(derr)
+		return nil
+	}
+
+	if len(drawRes.Items) == 0 {
+		return nil
+	}
+
+	return &drawRes.Items[0]
+}
+
 func getSlots(drawId string, token string) SlotSlice {
 	url := fmt.Sprintf(`%s/api/collections/slots_with_scores/records?perPage=255&filter=(draw_id="%s")&skipTotal=true`, os.Getenv("BASE_URL"), drawId)
 
@@ -216,4 +242,22 @@ func updateSets(setScores SetSlice, token string) {
 
 		printWithTimestamp(res.Status, "updated set", setScore)
 	}
+}
+
+func addHealthCheck(drawType, drawUrl string, errMsg string, token string) {
+	url := fmt.Sprintf(`%s/api/collections/scrape_health_check/records`, os.Getenv("BASE_URL"))
+
+	requestData := HealthCheckReq{
+		DrawType: drawType,
+		DrawUrl:  drawUrl,
+		Error:    errMsg,
+	}
+	res, err := makeHTTPRequest("POST", url, token, requestData)
+	if err != nil {
+		log.Println(err)
+		return
+	}
+	defer res.Body.Close()
+
+	printWithTimestamp(res.Status, "added health check", drawType, drawUrl)
 }

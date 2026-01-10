@@ -32,9 +32,10 @@ func TestScrapeATP(t *testing.T) {
 	t.Run("Scrape ATP", func(t *testing.T) {
 		t.Parallel()
 
-		scrapedSlots, seeds := scrapeATP(getScraper(draw), draw)
+		scrapedSlots, seeds, err := scrapeATP(getScraper(draw), draw)
 		assert := assert.New(t)
 
+		assert.NoError(err)
 		assert.Equal(255, len(scrapedSlots))
 		assert.Equal(128, len(seeds))
 
@@ -94,9 +95,10 @@ func TestScrapeWTALiveTennisEU(t *testing.T) {
 	}
 
 	t.Run("Scrape WTA - Live Tennis EU", func(t *testing.T) {
-		scrapedSlots, seeds := scrapeWTA(getScraper(draw), draw)
+		scrapedSlots, seeds, err := scrapeWTA(getScraper(draw), draw)
 		assert := assert.New(t)
 
+		assert.NoError(err)
 		assert.Equal(255, len(scrapedSlots))
 
 		// usually 128, 2 "X. Wangs" in 2025 US Open
