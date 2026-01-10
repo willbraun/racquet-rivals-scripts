@@ -32,7 +32,7 @@ func main() {
 	flag.Parse()
 
 	token := login()
-	scraper := &MockScraper{}
+	scraper := &RealScraper{}
 
 	if *isCheck {
 		atpDraw := getLatestDrawByEvent("Men's Singles", token)
