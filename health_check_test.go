@@ -19,7 +19,7 @@ type HealthCheckCall struct {
 	Token    string
 }
 
-func (m *MockHealthCheckRecorder) Record(drawType, drawUrl, errMsg, token string) {
+func (m *MockHealthCheckRecorder) record(drawType, drawUrl, errMsg, token string) {
 	m.Calls = append(m.Calls, HealthCheckCall{
 		DrawType: drawType,
 		DrawUrl:  drawUrl,

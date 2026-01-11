@@ -10,12 +10,12 @@ const (
 )
 
 type HealthCheckRecorder interface {
-	Record(drawType, drawUrl, errMsg, token string)
+	record(drawType, drawUrl, errMsg, token string)
 }
 
 type RealHealthCheckRecorder struct{}
 
-func (r *RealHealthCheckRecorder) Record(drawType, drawUrl, errMsg, token string) {
+func (r *RealHealthCheckRecorder) record(drawType, drawUrl, errMsg, token string) {
 	addHealthCheck(drawType, drawUrl, errMsg, token)
 }
 
@@ -30,7 +30,7 @@ func performHealthCheck(scraper Scraper, recorder HealthCheckRecorder, atpDraw, 
 		} else {
 			log.Println("ATP health check passed")
 		}
-		recorder.Record(DrawTypeATP, atpDraw.Url, errMsg, token)
+		recorder.record(DrawTypeATP, atpDraw.Url, errMsg, token)
 	} else {
 		log.Println("No ATP draw found for health check")
 	}
@@ -45,7 +45,7 @@ func performHealthCheck(scraper Scraper, recorder HealthCheckRecorder, atpDraw, 
 		} else {
 			log.Println("WTA health check passed")
 		}
-		recorder.Record(DrawTypeWTA, wtaDraw.Url, errMsg, token)
+		recorder.record(DrawTypeWTA, wtaDraw.Url, errMsg, token)
 	} else {
 		log.Println("No WTA draw found for health check")
 	}
