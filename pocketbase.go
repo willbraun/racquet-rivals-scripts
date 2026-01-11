@@ -245,7 +245,7 @@ func updateSets(setScores SetSlice, token string) {
 }
 
 func addHealthCheck(drawType, drawUrl string, errMsg string, token string) {
-	url := fmt.Sprintf(`%s/api/collections/scrape_health_check/records`, os.Getenv("BASE_URL"))
+	url := fmt.Sprintf(`%s/api/collections/scraper_health_check/records`, os.Getenv("BASE_URL"))
 
 	requestData := HealthCheckReq{
 		DrawType: drawType,
