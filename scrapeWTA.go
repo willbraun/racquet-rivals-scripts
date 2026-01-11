@@ -1,6 +1,7 @@
 package main
 
 import (
+	"errors"
 	"fmt"
 	"log"
 	"slices"
@@ -24,6 +25,7 @@ func scrapeWTA(scraper Scraper, draw DrawRecord) (SlotSlice, map[string]string, 
 func scrapeWtaOfficial(scraper Scraper, draw DrawRecord) (SlotSlice, map[string]string, error) {
 	slots := SlotSlice{}
 	seeds := make(map[string]string)
+	var errs []error
 
 	html, err := scraper.scrape(draw.Url)
 	if err != nil {
@@ -33,7 +35,8 @@ func scrapeWtaOfficial(scraper Scraper, draw DrawRecord) (SlotSlice, map[string]
 
 	doc, err := goquery.NewDocumentFromReader(reader)
 	if err != nil {
-		log.Println(err)
+		log.Println("error creating document:", err)
+		errs = append(errs, fmt.Errorf("error creating document: %w", err))
 	}
 
 	slotMap := make(map[SlotKey]*Slot)
@@ -65,6 +68,7 @@ func scrapeWtaOfficial(scraper Scraper, draw DrawRecord) (SlotSlice, map[string]
 				games, err := strconv.Atoi(gameStr)
 				if err != nil {
 					log.Println("WTA - Error converting games to int:", err)
+					errs = append(errs, fmt.Errorf("WTA - error converting games to int: %w", err))
 				}
 
 				tiebreakStr := ""
@@ -77,6 +81,7 @@ func scrapeWtaOfficial(scraper Scraper, draw DrawRecord) (SlotSlice, map[string]
 					tiebreak, err = strconv.Atoi(tiebreakStr)
 					if err != nil {
 						log.Println("WTA - Error converting tiebreak to int:", err)
+						errs = append(errs, fmt.Errorf("WTA - error converting tiebreak to int: %w", err))
 					}
 				}
 
@@ -140,6 +145,16 @@ func scrapeWtaOfficial(scraper Scraper, draw DrawRecord) (SlotSlice, map[string]
 
 	cleanedSlots, cleanedSeeds := cleanScrapedResults(slots, seeds)
 
+	received := len(cleanedSlots)
+	expected := (draw.Size * 2) - 1
+
+	if received != expected {
+		errs = append(errs, fmt.Errorf("WTA - Incorrect number of scraped slots: expected %d, got %d", expected, received))
+	}
+
+	if len(errs) > 0 {
+		return cleanedSlots, cleanedSeeds, errors.Join(errs...)
+	}
 	return cleanedSlots, cleanedSeeds, nil
 }
 
@@ -164,6 +179,7 @@ func wtaOfficialExtractName(x *goquery.Selection) (string, string) {
 func scrapeWtaLiveTennisEu(scraper Scraper, draw DrawRecord) (SlotSlice, map[string]string, error) {
 	slots := SlotSlice{}
 	seeds := make(map[string]string)
+	var errs []error
 
 	html, err := scraper.scrape(draw.Url)
 	if err != nil {
@@ -173,7 +189,8 @@ func scrapeWtaLiveTennisEu(scraper Scraper, draw DrawRecord) (SlotSlice, map[str
 
 	doc, err := goquery.NewDocumentFromReader(reader)
 	if err != nil {
-		log.Println(err)
+		log.Println("error creating document:", err)
+		errs = append(errs, fmt.Errorf("error creating document: %w", err))
 	}
 
 	majorNames := []string{"Australian Open", "Roland Garros", "Wimbledon", "US Open"}
@@ -189,13 +206,31 @@ func scrapeWtaLiveTennisEu(scraper Scraper, draw DrawRecord) (SlotSlice, map[str
 		return true // keep searching
 	})
 	if !exists {
-		log.Println("WTA - Live Tennis EU Draw ID not found")
-		return SlotSlice{}, nil, fmt.Errorf("WTA Live Tennis EU draw ID not found")
+		log.Println("WTA - Live Tennis EU draw not found")
+		return SlotSlice{}, nil, fmt.Errorf("WTA Live Tennis EU draw not found")
 	}
 
 	htmlDrawId := "dr" + htmlButtonId[len(htmlButtonId)-1:]
 	htmlDraw := doc.Find("#" + htmlDrawId)
 	htmlDrawRows := htmlDraw.ChildrenFiltered("table").ChildrenFiltered("tbody").ChildrenFiltered("tr")
+
+	receivedHtmlRows := htmlDrawRows.Length()
+
+	// Expected states
+	// 0 = draw was found but not started
+	// 66 = draw is available
+	expectedHtmlRows := []int{0, 66}
+
+	if !slices.Contains(expectedHtmlRows, htmlDrawRows.Length()) {
+		errs = append(errs, fmt.Errorf("WTA - Incorrect number of HTML rows: expected %d, got %d", expectedHtmlRows, receivedHtmlRows))
+	}
+
+	// This site shows a live view of upcoming tournaments. If the draw hasn't started,
+	// there will be no rows to scrape. A failure is expected until the draw has been created.
+	if receivedHtmlRows == 0 {
+		log.Println("WTA - Live Tennis EU draw not started")
+		return SlotSlice{}, nil, fmt.Errorf("WTA Live Tennis EU draw not started")
+	}
 
 	rowspanToRoundMap := map[string]int{
 		"1":  1,
@@ -259,6 +294,7 @@ func scrapeWtaLiveTennisEu(scraper Scraper, draw DrawRecord) (SlotSlice, map[str
 					games, err := strconv.Atoi(gamesStr)
 					if err != nil {
 						log.Println("WTA Live Tennis EU - Error converting games to int:", err)
+						errs = append(errs, fmt.Errorf("WTA Live Tennis EU - error converting games to int: %w", err))
 					}
 
 					tiebreak := 0
@@ -266,6 +302,7 @@ func scrapeWtaLiveTennisEu(scraper Scraper, draw DrawRecord) (SlotSlice, map[str
 						tiebreak, err = strconv.Atoi(tiebreakStr)
 						if err != nil {
 							log.Println("WTA Live Tennis EU - Error converting tiebreak to int:", err)
+							errs = append(errs, fmt.Errorf("WTA Live Tennis EU - error converting tiebreak to int: %w", err))
 						}
 					}
 
@@ -288,5 +325,15 @@ func scrapeWtaLiveTennisEu(scraper Scraper, draw DrawRecord) (SlotSlice, map[str
 
 	cleanedSlots, cleanedSeeds := cleanScrapedResults(slots, seeds)
 
+	receivedSlots := len(cleanedSlots)
+	expectedSlots := (draw.Size * 2) - 1
+
+	if receivedSlots != expectedSlots {
+		errs = append(errs, fmt.Errorf("WTA - Incorrect number of scraped slots: expected %d, got %d", expectedSlots, receivedSlots))
+	}
+
+	if len(errs) > 0 {
+		return cleanedSlots, cleanedSeeds, errors.Join(errs...)
+	}
 	return cleanedSlots, cleanedSeeds, nil
 }

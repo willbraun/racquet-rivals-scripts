@@ -70,6 +70,7 @@ func toSlotSlice(sr []SlotRecord) SlotSlice {
 }
 
 func cleanScrapedResults(scraped SlotSlice, seeds map[string]string) (SlotSlice, map[string]string) {
+	// Sort scraped slots by Round and Position
 	sort.Slice(scraped, func(i, j int) bool {
 		if scraped[i].Round == scraped[j].Round {
 			return scraped[i].Position < scraped[j].Position
@@ -77,6 +78,7 @@ func cleanScrapedResults(scraped SlotSlice, seeds map[string]string) (SlotSlice,
 		return scraped[i].Round < scraped[j].Round
 	})
 
+	// Remove seed created by unseeded players
 	delete(seeds, "")
 	return scraped, seeds
 }

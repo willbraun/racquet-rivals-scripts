@@ -1,6 +1,7 @@
 package main
 
 import (
+	"errors"
 	"fmt"
 	"log"
 	"strconv"
@@ -12,6 +13,7 @@ import (
 func scrapeATP(scraper Scraper, draw DrawRecord) (SlotSlice, map[string]string, error) {
 	slots := SlotSlice{}
 	seeds := make(map[string]string)
+	var errs []error
 
 	html, err := scraper.scrape(draw.Url)
 	if err != nil {
@@ -21,7 +23,8 @@ func scrapeATP(scraper Scraper, draw DrawRecord) (SlotSlice, map[string]string, 
 
 	doc, err := goquery.NewDocumentFromReader(reader)
 	if err != nil {
-		log.Println(err)
+		log.Println("error creating document:", err)
+		errs = append(errs, fmt.Errorf("error creating document: %w", err))
 	}
 
 	roundContainers := doc.Find(".draw-content").FilterFunction(func(_ int, selection *goquery.Selection) bool {
@@ -58,6 +61,7 @@ func scrapeATP(scraper Scraper, draw DrawRecord) (SlotSlice, map[string]string, 
 				games, err := strconv.Atoi(gamesStr)
 				if err != nil {
 					log.Println("ATP - Error converting games to int:", err)
+					errs = append(errs, fmt.Errorf("ATP - error converting games to int: %w", err))
 				}
 
 				tiebreakStr := ""
@@ -70,6 +74,7 @@ func scrapeATP(scraper Scraper, draw DrawRecord) (SlotSlice, map[string]string, 
 					tiebreak, err = strconv.Atoi(tiebreakStr)
 					if err != nil {
 						log.Println("ATP - Error converting tiebreak to int:", err)
+						errs = append(errs, fmt.Errorf("ATP - error converting tiebreak to int: %w", err))
 					}
 				}
 
@@ -91,5 +96,15 @@ func scrapeATP(scraper Scraper, draw DrawRecord) (SlotSlice, map[string]string, 
 	winnerSeed := trim(winner.Find("span").Text())
 	slots.add(Slot{DrawID: draw.ID, Round: round, Position: 1, Name: winnerName, Seed: winnerSeed})
 
+	received := len(slots)
+	expected := (draw.Size * 2) - 1
+
+	if received != expected {
+		errs = append(errs, fmt.Errorf("ATP - Incorrect number of scraped slots: expected %d, got %d", expected, received))
+	}
+
+	if len(errs) > 0 {
+		return slots, seeds, errors.Join(errs...)
+	}
 	return slots, seeds, nil
 }

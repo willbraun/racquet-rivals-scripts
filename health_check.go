@@ -30,6 +30,7 @@ func performHealthCheck(scraper Scraper, recorder HealthCheckRecorder, atpDraw, 
 		} else {
 			log.Println("ATP health check passed")
 		}
+
 		recorder.record(DrawTypeATP, atpDraw.Url, errMsg, token)
 	} else {
 		log.Println("No ATP draw found for health check")

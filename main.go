@@ -70,19 +70,6 @@ func main() {
 			continue
 		}
 
-		received := len(scrapedSlots)
-		expected := (draw.Size * 2) - 1
-
-		if received != expected {
-			log.Printf("Incorrect number of scraped slots for %s %s %d. Expected: %d, received: %d.",
-				draw.Name,
-				draw.Event,
-				draw.Year,
-				expected,
-				received)
-			continue
-		}
-
 		newSlots, updatedSlots, newSets, updatedSets := getUpdates(scrapedSlots, currentSlots, seeds)
 
 		postSlots(newSlots, token)
