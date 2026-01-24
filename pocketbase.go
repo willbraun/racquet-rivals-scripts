@@ -28,7 +28,7 @@ func makeHTTPRequest(method, url, token string, requestData interface{}) (*http.
 
 	req.Header.Add("Content-Type", "application/json")
 
-	client := &http.Client{Timeout: 10 * time.Second}
+	client := &http.Client{Timeout: 30 * time.Second}
 	return client.Do(req)
 }
 
@@ -115,6 +115,7 @@ func getSlots(drawId string, token string) SlotSlice {
 	res, err := makeHTTPRequest("GET", url, token, nil)
 	if err != nil {
 		log.Println(err)
+		return nil
 	}
 	defer res.Body.Close()
 
@@ -146,6 +147,7 @@ func postSlots(slots SlotSlice, token string) {
 		res, err := makeHTTPRequest("POST", url, token, requestData)
 		if err != nil {
 			log.Println(err)
+			continue
 		}
 		defer res.Body.Close()
 
@@ -190,6 +192,7 @@ func updateSlots(slots SlotSlice, token string) {
 		res, err := makeHTTPRequest("PATCH", url, token, requestData)
 		if err != nil {
 			log.Println(err)
+			continue
 		}
 		defer res.Body.Close()
 
@@ -214,6 +217,7 @@ func postSets(setScores SetSlice, token string) {
 		res, err := makeHTTPRequest("POST", url, token, requestData)
 		if err != nil {
 			log.Println(err)
+			continue
 		}
 		defer res.Body.Close()
 
@@ -237,6 +241,7 @@ func updateSets(setScores SetSlice, token string) {
 		res, err := makeHTTPRequest("PATCH", url, token, requestData)
 		if err != nil {
 			log.Println(err)
+			continue
 		}
 		defer res.Body.Close()
 

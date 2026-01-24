@@ -291,6 +291,11 @@ func scrapeWtaLiveTennisEu(scraper Scraper, draw DrawRecord) (SlotSlice, map[str
 						}
 					}
 
+					// Walkover, skip adding sets
+					if strings.Contains(gamesStr, "w") {
+						return false
+					}
+
 					games, err := strconv.Atoi(gamesStr)
 					if err != nil {
 						log.Println("WTA Live Tennis EU - Error converting games to int:", err)
