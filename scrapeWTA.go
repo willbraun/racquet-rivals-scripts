@@ -193,7 +193,7 @@ func scrapeWtaLiveTennisEu(scraper Scraper, draw DrawRecord) (SlotSlice, map[str
 		errs = append(errs, fmt.Errorf("error creating document: %w", err))
 	}
 
-	majorNames := []string{"Australian Open", "Roland Garros", "Wimbledon", "US Open"}
+	majorNames := []string{"Australian Open", "French Open", "Wimbledon", "US Open"}
 	var htmlButtonId string
 	var exists bool
 
